@@ -1,0 +1,16 @@
+# Nix
+home-manager/flake.lock
+home-manager/result
+
+# Environment variables
+.env
+
+# Temporary files
+.tmp/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

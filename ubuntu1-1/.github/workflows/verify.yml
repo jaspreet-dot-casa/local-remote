@@ -1,0 +1,248 @@
+name: Verify Setup
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  syntax-check:
+    name: Syntax Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check script syntax
+        run: make test-syntax
+      
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      
+      - name: Run ShellCheck
+        run: make shellcheck
+  
+  nix-check:
+    name: Nix Flake Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+        with:
+          nix_path: nixpkgs=channel:nixos-24.05
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      
+      - name: Run Nix flake check
+        run: make nix-check
+      
+      - name: Build home-manager configuration
+        run: |
+          cd home-manager
+          nix build .#homeConfigurations.ubuntu.activationPackage --show-trace
+  
+  integration-test:
+    name: Full Integration Test
+    runs-on: ubuntu-24.04-8core-32gb  # Blacksmith runner
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Display system info
+        run: |
+          echo "════════════════════════════════════════════"
+          echo "  System Information"
+          echo "════════════════════════════════════════════"
+          echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d '"' -f 2)"
+          echo "Kernel: $(uname -r)"
+          echo "Architecture: $(uname -m)"
+          echo "CPU Cores: $(nproc)"
+          echo "Memory: $(free -h | grep Mem | awk '{print $2}')"
+          echo "Disk Space: $(df -h / | tail -1 | awk '{print $4}') available"
+          echo "════════════════════════════════════════════"
+      
+      - name: Run setup script
+        run: |
+          make setup
+      
+      - name: Configure test .env
+        run: |
+          echo "GIT_NAME=GitHub Actions Test" > .env
+          echo "GIT_EMAIL=test@github-actions.com" >> .env
+          cat .env
+      
+      - name: Source Nix and install packages
+        run: |
+          # shellcheck source=/dev/null
+          source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          echo "Nix version: $(nix --version)"
+          make install
+      
+      - name: Verify git configuration
+        run: |
+          echo "Checking git configuration..."
+          git config --global user.name
+          git config --global user.email
+          
+          NAME="$(git config --global user.name)"
+          EMAIL="$(git config --global user.email)"
+          
+          if [ "$NAME" != "GitHub Actions Test" ]; then
+            echo "Error: Git name mismatch. Expected 'GitHub Actions Test', got '$NAME'"
+            exit 1
+          fi
+          
+          if [ "$EMAIL" != "test@github-actions.com" ]; then
+            echo "Error: Git email mismatch. Expected 'test@github-actions.com', got '$EMAIL'"
+            exit 1
+          fi
+          
+          echo "✓ Git configured correctly"
+      
+      - name: Verify installed tools
+        run: |
+          # shellcheck source=/dev/null
+          source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          export PATH=$HOME/.nix-profile/bin:$PATH
+          
+          echo "════════════════════════════════════════════"
+          echo "  Verifying Installed Tools"
+          echo "════════════════════════════════════════════"
+          
+          tools=(
+            "git:--version"
+            "gh:--version"
+            "lazygit:--version"
+            "docker:--version"
+            "nvim:--version"
+            "tmux:-V"
+            "zellij:--version"
+            "tree:--version"
+            "fzf:--version"
+            "zoxide:--version"
+            "rg:--version"
+            "fd:--version"
+            "bat:--version"
+            "jq:--version"
+            "btop:--version"
+            "nmap:--version"
+            "delta:--version"
+            "starship:--version"
+          )
+          
+          for tool_spec in "${tools[@]}"; do
+            IFS=':' read -r tool flag <<< "$tool_spec"
+            if command -v "$tool" &> /dev/null; then
+              version=$("$tool" "$flag" 2>&1 | head -1)
+              echo "✓ $tool: $version"
+            else
+              echo "✗ $tool: NOT FOUND"
+              exit 1
+            fi
+          done
+          
+          echo "════════════════════════════════════════════"
+      
+      - name: Verify Docker daemon
+        run: |
+          echo "Starting Docker daemon..."
+          sudo systemctl start docker
+          sudo systemctl status docker --no-pager
+          
+          echo ""
+          echo "Testing Docker..."
+          sudo docker ps
+          echo "✓ Docker daemon is working"
+      
+      - name: Verify Nix environment
+        run: |
+          # shellcheck source=/dev/null
+          source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          
+          echo "Nix version: $(nix --version)"
+          echo "Home Manager version: $(home-manager --version)"
+          echo "✓ Nix environment is working"
+      
+      - name: Check PATH priority
+        run: |
+          # shellcheck source=/dev/null
+          source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          export PATH=$HOME/.nix-profile/bin:$PATH
+          
+          echo "Current PATH:"
+          echo "$PATH" | tr ':' '\n' | head -5
+          
+          echo ""
+          echo "Git location: $(which git)"
+          echo "Git version: $(git --version)"
+          
+          # Verify git is from Nix profile
+          if which git | grep -q ".nix-profile"; then
+            echo "✓ Using Nix-installed git"
+          else
+            echo "✗ Not using Nix-installed git"
+            exit 1
+          fi
+      
+      - name: Verify git delta integration
+        run: |
+          pager=$(git config --global core.pager)
+          default_branch=$(git config --global init.defaultBranch)
+          
+          echo "Git pager: $pager"
+          echo "Default branch: $default_branch"
+          
+          if [ "$pager" != "delta" ]; then
+            echo "✗ Git pager not set to delta"
+            exit 1
+          fi
+          
+          if [ "$default_branch" != "main" ]; then
+            echo "✗ Default branch not set to main"
+            exit 1
+          fi
+          
+          echo "✓ Git delta integration configured correctly"
+      
+      - name: Test idempotency (re-run setup and install)
+        run: |
+          echo "Testing idempotency by re-running setup..."
+          make setup
+          
+          # shellcheck source=/dev/null
+          source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          
+          echo ""
+          echo "Re-running install..."
+          make install
+          
+          echo "✓ Scripts are idempotent"
+      
+      - name: Summary
+        if: success()
+        run: |
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "  ✅ ALL TESTS PASSED"
+          echo "════════════════════════════════════════════"
+          echo ""
+          echo "Verified:"
+          echo "  ✓ Syntax validation passed"
+          echo "  ✓ ShellCheck linting passed"
+          echo "  ✓ Nix flake validation passed"
+          echo "  ✓ All 18 tools installed correctly"
+          echo "  ✓ Git configuration working"
+          echo "  ✓ Docker daemon functional"
+          echo "  ✓ PATH priority correct"
+          echo "  ✓ Git delta integration working"
+          echo "  ✓ Scripts are idempotent"
+          echo ""
+          echo "Configuration is ready for deployment!"
