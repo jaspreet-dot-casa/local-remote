@@ -1,11 +1,21 @@
-name: Verify Setup
+name: Verify Ubuntu1-1 Setup
 
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'ubuntu1-1/**'
+      - '.github/workflows/verify-ubuntu1-1.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'ubuntu1-1/**'
+      - '.github/workflows/verify-ubuntu1-1.yml'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ubuntu1-1
 
 jobs:
   syntax-check:
@@ -70,8 +80,7 @@ jobs:
           echo "════════════════════════════════════════════"
       
       - name: Run setup script
-        run: |
-          make setup
+        run: make setup
       
       - name: Configure test .env
         run: |

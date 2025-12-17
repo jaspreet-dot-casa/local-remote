@@ -251,17 +251,19 @@ make nix-check
 
 ### Continuous Integration
 
-The repository includes GitHub Actions workflows that automatically:
+The repository includes a GitHub Actions workflow (located at `../.github/workflows/verify-ubuntu1-1.yml`) that automatically:
 - Run shellcheck on all scripts
 - Validate Nix flake configuration
 - Test full setup on Ubuntu 24.04 (Blacksmith runner)
 - Verify all tools installation
 - Test idempotency (re-running scripts)
 
-These tests run automatically on:
-- Every push to `main` or `develop` branches
-- Every pull request
+The workflow runs automatically on:
+- Every push to `main` or `develop` branches that modifies files in `ubuntu1-1/`
+- Every pull request that modifies files in `ubuntu1-1/`
 - Manual trigger via GitHub Actions UI
+
+The workflow uses `defaults.run.working-directory: ubuntu1-1` to run all commands in this directory.
 
 ## Troubleshooting
 
@@ -319,11 +321,19 @@ ubuntu1-1/
 │   ├── setup.sh               # Setup script
 │   ├── configure-git.sh       # Git configuration from .env
 │   ├── post-install.sh        # Shell change script
-│   └── verify-env.sh          # Verification script
+│   ├── verify-env.sh          # Verification script
+│   ├── test-docker.sh         # Docker test runner
+│   └── test-in-docker.sh      # Container tests
 ├── .env.example               # Template for .env
 ├── .env                       # Your git config (gitignored)
+├── .dockerignore              # Docker build exclusions
+├── .shellcheckrc              # ShellCheck configuration
+├── Dockerfile.test            # Docker test container
 ├── Makefile                   # Automation targets
 └── README.md                  # This file
+
+GitHub Actions workflow (in parent repo):
+../.github/workflows/verify-ubuntu1-1.yml
 ```
 
 ## Resources
