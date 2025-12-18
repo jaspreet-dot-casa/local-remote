@@ -1,12 +1,17 @@
-.PHONY: setup install zsh verify help test-docker test-syntax shellcheck nix-check
+.PHONY: gen-user-config setup install zsh verify help test-docker test-syntax shellcheck nix-check
 
 # Get the directory where this Makefile resides
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# Generate user-specific Nix configuration
+gen-user-config:
+	@bash $(ROOT)scripts/generate-user-config.sh > /dev/null
 
 help:
 	@echo "Available targets:"
 	@echo ""
 	@echo "Setup & Installation:"
+	@echo "  make gen-user-config - Generate user-specific Nix configuration"
 	@echo "  make setup         - First-time setup (Nix, Docker, Home Manager, Git config)"
 	@echo "  make install       - Install/update packages via Home Manager"
 	@echo "  make zsh           - Change default shell to zsh (run after install)"
@@ -22,9 +27,9 @@ setup:
 	@echo "Running setup script..."
 	@bash $(ROOT)scripts/setup.sh
 
-install:
+install: gen-user-config
 	@echo "Installing packages via Home Manager..."
-	@FLAKE_CONFIG=$$(bash $(ROOT)scripts/detect-config.sh); \
+	@FLAKE_CONFIG=$$(bash $(ROOT)scripts/generate-user-config.sh); \
 	ARCH=$$(uname -m); \
 	CURRENT_USER=$${USER:-$$(whoami)}; \
 	echo "Detected: arch=$$ARCH, user=$$CURRENT_USER, config=$$FLAKE_CONFIG"; \
@@ -50,6 +55,7 @@ test-syntax:
 	@echo "Checking script syntax..."
 	@echo "Checking bash scripts..."
 	@bash -n $(ROOT)scripts/setup.sh && echo "  ✓ setup.sh"
+	@bash -n $(ROOT)scripts/generate-user-config.sh && echo "  ✓ generate-user-config.sh"
 	@bash -n $(ROOT)scripts/configure-git.sh && echo "  ✓ configure-git.sh"
 	@bash -n $(ROOT)scripts/post-install.sh && echo "  ✓ post-install.sh"
 	@bash -n $(ROOT)scripts/test-docker.sh && echo "  ✓ test-docker.sh"

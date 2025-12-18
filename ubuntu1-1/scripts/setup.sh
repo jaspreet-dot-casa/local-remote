@@ -149,9 +149,10 @@ if command -v home-manager &> /dev/null; then
     echo_success "Home Manager already installed"
 else
     echo_info "Installing Home Manager..."
-    # Detect appropriate flake configuration
+    # Generate user configuration and detect system
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    FLAKE_CONFIG=$(bash "${SCRIPT_DIR}/detect-config.sh")
+    echo_info "Generating user configuration..."
+    FLAKE_CONFIG=$(bash "${SCRIPT_DIR}/generate-user-config.sh")
     ARCH=$(uname -m)
     CURRENT_USER="${USER:-$(whoami)}"
     
