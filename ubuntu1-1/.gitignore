@@ -1,5 +1,9 @@
 # Nix
 home-manager/result
+
+# Machine-specific configuration (auto-generated from template)
+# Template file (user-config.nix.template) IS tracked in Git
+# Generated file (user-config.nix) is NOT tracked (contains real values)
 home-manager/user-config.nix
 
 # Temporary files
