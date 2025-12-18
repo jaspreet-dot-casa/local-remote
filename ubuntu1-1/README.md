@@ -261,11 +261,13 @@ The pre-commit hook is already installed in `.git/hooks/pre-commit` and will run
 The repository includes a GitHub Actions workflow (located at `../.github/workflows/verify-ubuntu1-1.yml`) that automatically:
 - Checks bash syntax on all scripts
 - Runs shellcheck linting on all scripts
-- Tests full setup in Docker container (Ubuntu 24.04)
-- Verifies all tools are installed correctly
-- Tests Nix and Home Manager integration
 
 **Note:** Nix flake validation runs as a pre-commit hook locally, not in CI, for faster feedback.
+
+**Full integration testing** (Docker-based setup, tool verification, and Nix/Home Manager tests) can be run locally using `make test-docker` but is not currently included in CI to reduce runtime and complexity. To add these to CI, you can:
+1. Uncomment or add a `docker-integration-test` job to the workflow
+2. Add steps to build the Docker test image and run the container
+3. See `scripts/test-docker.sh` and `Dockerfile.test` for the local implementation
 
 The workflow runs automatically on:
 - Every push to `main` or `develop` branches that modifies files in `ubuntu1-1/`
