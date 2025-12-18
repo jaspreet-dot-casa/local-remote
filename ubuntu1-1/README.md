@@ -238,14 +238,34 @@ Validate the Nix flake configuration (requires Nix to be installed):
 make nix-check
 ```
 
+### Pre-commit Hook
+
+The repository includes a pre-commit hook that automatically runs `nix flake check` when committing changes to `ubuntu1-1/` files.
+
+**Setup** (one-time):
+The pre-commit hook is already installed in `.git/hooks/pre-commit` and will run automatically on commits.
+
+**Behavior:**
+- Runs only when `ubuntu1-1/` files are being committed
+- Requires Nix to be installed (skips with warning if not available)
+- Validates the Nix flake configuration before allowing the commit
+- Can be bypassed with: `git commit --no-verify` (not recommended)
+
+**Benefits:**
+- Catches Nix configuration errors before they reach CI
+- Ensures all commits maintain valid Nix flake configuration
+- Faster feedback loop for developers
+
 ### Continuous Integration
 
 The repository includes a GitHub Actions workflow (located at `../.github/workflows/verify-ubuntu1-1.yml`) that automatically:
-- Run shellcheck on all scripts
-- Validate Nix flake configuration
-- Test full setup on Ubuntu 24.04 (Blacksmith runner)
-- Verify all tools installation
-- Test idempotency (re-running scripts)
+- Checks bash syntax on all scripts
+- Runs shellcheck linting on all scripts
+- Tests full setup in Docker container (Ubuntu 24.04)
+- Verifies all tools are installed correctly
+- Tests Nix and Home Manager integration
+
+**Note:** Nix flake validation runs as a pre-commit hook locally, not in CI, for faster feedback.
 
 The workflow runs automatically on:
 - Every push to `main` or `develop` branches that modifies files in `ubuntu1-1/`
