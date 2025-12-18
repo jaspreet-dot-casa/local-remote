@@ -22,12 +22,21 @@ setup:
 install:
 	@echo "Installing packages via Home Manager..."
 	@ARCH=$$(uname -m); \
-	if [ "$$ARCH" = "aarch64" ]; then \
-		FLAKE_CONFIG="ubuntu-aarch64"; \
+	CURRENT_USER=$${USER:-$$(whoami)}; \
+	if [ "$$CURRENT_USER" = "testuser" ]; then \
+		if [ "$$ARCH" = "aarch64" ]; then \
+			FLAKE_CONFIG="testuser"; \
+		else \
+			FLAKE_CONFIG="testuser-x86"; \
+		fi; \
 	else \
-		FLAKE_CONFIG="ubuntu"; \
+		if [ "$$ARCH" = "aarch64" ]; then \
+			FLAKE_CONFIG="ubuntu-aarch64"; \
+		else \
+			FLAKE_CONFIG="ubuntu"; \
+		fi; \
 	fi; \
-	echo "Detected architecture: $$ARCH, using config: $$FLAKE_CONFIG"; \
+	echo "Detected: arch=$$ARCH, user=$$CURRENT_USER, config=$$FLAKE_CONFIG"; \
 	home-manager switch --flake ./home-manager#$$FLAKE_CONFIG
 	@echo ""
 	@echo "Configuring git (interactive if not set)..."

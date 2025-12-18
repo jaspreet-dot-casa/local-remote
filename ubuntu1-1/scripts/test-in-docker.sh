@@ -2,6 +2,9 @@
 set -e
 set -u
 
+# Ensure USER is set (required in Docker containers)
+export USER=${USER:-$(whoami)}
+
 echo "🐳 Running verification inside Docker container..."
 echo ""
 

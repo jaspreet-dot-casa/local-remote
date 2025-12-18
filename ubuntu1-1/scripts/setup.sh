@@ -149,14 +149,28 @@ if command -v home-manager &> /dev/null; then
     echo_success "Home Manager already installed"
 else
     echo_info "Installing Home Manager..."
-    # Detect architecture for flake configuration
+    # Detect architecture and user for flake configuration
     ARCH=$(uname -m)
-    if [ "${ARCH}" = "aarch64" ]; then
-        FLAKE_CONFIG="ubuntu-aarch64"
+    CURRENT_USER="${USER:-$(whoami)}"
+    
+    # Select appropriate configuration based on architecture and user
+    if [ "${CURRENT_USER}" = "testuser" ]; then
+        # Docker test environment
+        if [ "${ARCH}" = "aarch64" ]; then
+            FLAKE_CONFIG="testuser"
+        else
+            FLAKE_CONFIG="testuser-x86"
+        fi
     else
-        FLAKE_CONFIG="ubuntu"
+        # Production/normal environment
+        if [ "${ARCH}" = "aarch64" ]; then
+            FLAKE_CONFIG="ubuntu-aarch64"
+        else
+            FLAKE_CONFIG="ubuntu"
+        fi
     fi
-    echo_info "Detected architecture: ${ARCH}, using config: ${FLAKE_CONFIG}"
+    
+    echo_info "Detected: arch=${ARCH}, user=${CURRENT_USER}, using config=${FLAKE_CONFIG}"
     nix run home-manager/release-24.05 -- switch --flake ./home-manager#${FLAKE_CONFIG}
     echo_success "Home Manager installed successfully"
 fi

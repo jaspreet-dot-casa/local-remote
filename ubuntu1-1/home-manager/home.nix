@@ -4,14 +4,8 @@
   # Let Home Manager install and manage itself
   programs.home-manager.enable = true;
 
-  # User info (adjust as needed)
-  # Handle CI environments where USER/HOME may be empty during evaluation
-  home.username = 
-    let envUser = builtins.getEnv "USER";
-    in if envUser != "" then envUser else "runner";
-  home.homeDirectory = 
-    let envHome = builtins.getEnv "HOME";
-    in if envHome != "" then envHome else "/root";
+  # User info - will be set by flake.nix
+  # home.username and home.homeDirectory are configured in flake.nix
 
   # This value determines the Home Manager release
   home.stateVersion = "24.05";
@@ -33,10 +27,8 @@
     zellij
     tmux
 
-    # Editor
-    neovim
-
     # CLI utilities
+    # Note: neovim is configured via programs.neovim below, not here
     tree
     fzf
     zoxide

@@ -22,6 +22,9 @@ RUN useradd -m -s /bin/bash testuser && \
 USER testuser
 WORKDIR /home/testuser
 
+# Set USER environment variable (required by some scripts)
+ENV USER=testuser
+
 # Copy repository files (excluding what's in .dockerignore)
 COPY --chown=testuser:testuser . /home/testuser/ubuntu1-1
 
