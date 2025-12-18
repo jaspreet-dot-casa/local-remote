@@ -57,9 +57,10 @@ if command -v nix &> /dev/null; then
 else
     # Security Note: This command pipes curl output directly to sh for installation.
     # HTTPS/TLS provides protection against MITM attacks for the official nixos.org source.
+    # The --proto '=https' --tlsv1.2 flags enforce HTTPS and minimum TLS 1.2.
     # For additional security, you can manually download, inspect, and run the installer.
     echo_info "Installing Nix (multi-user)..."
-    sh <(curl -L https://nixos.org/nix/install) --daemon --yes
+    sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon --yes
     echo_success "Nix installed successfully"
 fi
 
@@ -144,32 +145,45 @@ echo_info "Configuring Git..."
 CURRENT_NAME=$(git config --global user.name 2>/dev/null || true)
 CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || true)
 
-if [ -n "$CURRENT_NAME" ] && [ -n "$CURRENT_EMAIL" ]; then
-    echo_success "Git already configured:"
-    echo "  Name:  $CURRENT_NAME"
-    echo "  Email: $CURRENT_EMAIL"
-    echo ""
-    read -p "Do you want to reconfigure? (y/N): " -r RECONFIGURE
-    if [[ ! $RECONFIGURE =~ ^[Yy]$ ]]; then
-        echo_info "Keeping existing git configuration"
+# Detect CI environment (GitHub Actions, GitLab CI, Jenkins, etc.)
+if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ] || [ -n "${GITLAB_CI:-}" ]; then
+    echo_info "CI environment detected, skipping interactive Git configuration"
+    if [ -n "$CURRENT_NAME" ] && [ -n "$CURRENT_EMAIL" ]; then
+        echo_success "Git already configured: $CURRENT_NAME <$CURRENT_EMAIL>"
     else
-        CURRENT_NAME=""
-        CURRENT_EMAIL=""
+        echo_info "Git not configured. Configure it before running 'make install'"
+        echo_info "Run: git config --global user.name 'Your Name'"
+        echo_info "Run: git config --global user.email 'your@email.com'"
     fi
-fi
+else
+    # Interactive mode for local usage
+    if [ -n "$CURRENT_NAME" ] && [ -n "$CURRENT_EMAIL" ]; then
+        echo_success "Git already configured:"
+        echo "  Name:  $CURRENT_NAME"
+        echo "  Email: $CURRENT_EMAIL"
+        echo ""
+        read -p "Do you want to reconfigure? (y/N): " -r RECONFIGURE
+        if [[ ! $RECONFIGURE =~ ^[Yy]$ ]]; then
+            echo_info "Keeping existing git configuration"
+        else
+            CURRENT_NAME=""
+            CURRENT_EMAIL=""
+        fi
+    fi
 
-if [ -z "$CURRENT_NAME" ] || [ -z "$CURRENT_EMAIL" ]; then
-    echo ""
-    echo "Please enter your Git configuration:"
-    read -p "Git Name (e.g., John Doe): " -r GIT_NAME
-    read -p "Git Email (e.g., john@example.com): " -r GIT_EMAIL
-    
-    if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
-        git config --global user.name "$GIT_NAME"
-        git config --global user.email "$GIT_EMAIL"
-        echo_success "Git configured: $GIT_NAME <$GIT_EMAIL>"
-    else
-        echo_info "Git configuration skipped (you can configure it later with 'make install')"
+    if [ -z "$CURRENT_NAME" ] || [ -z "$CURRENT_EMAIL" ]; then
+        echo ""
+        echo "Please enter your Git configuration:"
+        read -p "Git Name (e.g., John Doe): " -r GIT_NAME
+        read -p "Git Email (e.g., john@example.com): " -r GIT_EMAIL
+        
+        if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
+            git config --global user.name "$GIT_NAME"
+            git config --global user.email "$GIT_EMAIL"
+            echo_success "Git configured: $GIT_NAME <$GIT_EMAIL>"
+        else
+            echo_info "Git configuration skipped (you can configure it later with 'make install')"
+        fi
     fi
 fi
 

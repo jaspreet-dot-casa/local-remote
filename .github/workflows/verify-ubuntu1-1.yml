@@ -26,6 +26,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      
       - name: Check script syntax
         run: make test-syntax
       
@@ -51,9 +54,15 @@ jobs:
             experimental-features = nix-command flakes
       
       - name: Run Nix flake check
+        env:
+          USER: runner
+          HOME: /home/runner
         run: make nix-check
       
       - name: Build home-manager configuration
+        env:
+          USER: runner
+          HOME: /home/runner
         run: |
           cd home-manager
           nix build .#homeConfigurations.ubuntu.activationPackage --show-trace
@@ -79,14 +88,13 @@ jobs:
           echo "Disk Space: $(df -h / | tail -1 | awk '{print $4}') available"
           echo "════════════════════════════════════════════"
       
+      - name: Configure Git for CI
+        run: |
+          git config --global user.name "GitHub Actions Test"
+          git config --global user.email "test@github-actions.com"
+      
       - name: Run setup script
         run: make setup
-      
-      - name: Configure test .env
-        run: |
-          echo "GIT_NAME=GitHub Actions Test" > .env
-          echo "GIT_EMAIL=test@github-actions.com" >> .env
-          cat .env
       
       - name: Source Nix and install packages
         run: |
