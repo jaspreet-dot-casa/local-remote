@@ -1,0 +1,34 @@
+# Dockerfile for testing Ubuntu Nix setup
+FROM ubuntu:24.04
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install minimal requirements
+RUN apt-get update && \
+    apt-get install -y \
+    sudo \
+    git \
+    curl \
+    xz-utils \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a test user (non-root) with sudo access
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Switch to test user
+USER testuser
+WORKDIR /home/testuser
+
+# Set USER environment variable (required by some scripts)
+ENV USER=testuser
+
+# Copy repository files (excluding what's in .dockerignore)
+COPY --chown=testuser:testuser . /home/testuser/ubuntu1-1
+
+WORKDIR /home/testuser/ubuntu1-1
+
+# Run the verification script
+CMD ["/bin/bash", "-c", "bash scripts/test-in-docker.sh"]

@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+
+# Nix build artifacts
+home-manager/result
+home-manager/flake.lock
+
+# Temporary files
+.tmp/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# CI/CD
+.github/

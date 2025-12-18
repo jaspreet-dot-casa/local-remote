@@ -1,0 +1,276 @@
+{ config, pkgs, ... }:
+
+{
+  # Let Home Manager install and manage itself
+  programs.home-manager.enable = true;
+
+  # User info - will be set by flake.nix
+  # home.username and home.homeDirectory are configured in flake.nix
+
+  # This value determines the Home Manager release
+  home.stateVersion = "24.05";
+
+  # Packages to install
+  home.packages = with pkgs; [
+    # Version control
+    git
+    gh
+    lazygit
+    delta
+
+    # Docker tools (CLI only - daemon installed via apt)
+    docker-client
+    docker-compose
+    lazydocker
+
+    # Terminal multiplexers
+    zellij
+    tmux
+
+    # CLI utilities
+    # Note: neovim is configured via programs.neovim below, not here
+    tree
+    fzf
+    zoxide
+    ripgrep  # rg
+    fd       # find alternative
+    bat      # cat alternative
+    jq       # JSON processor
+    btop     # System monitor
+    nmap     # Network scanner
+    bind     # Provides dig, nslookup (dnsutils)
+    apacheHttpd  # Provides htpasswd, ab
+
+    # Prompt
+    starship
+  ];
+
+  # Git configuration
+  # NOTE: user.name and user.email are set via .env (see scripts/configure-git.sh)
+  programs.git = {
+    enable = true;
+    extraConfig = {
+      init = {
+        defaultBranch = "main";
+      };
+      push = {
+        autoSetupRemote = true;
+      };
+      pull = {
+        rebase = true;
+      };
+      core = {
+        pager = "delta";
+      };
+      interactive = {
+        diffFilter = "delta --color-only";
+      };
+      delta = {
+        navigate = true;
+        side-by-side = true;
+        line-numbers = true;
+      };
+      merge = {
+        conflictstyle = "diff3";
+      };
+      diff = {
+        colorMoved = "default";
+      };
+      url."ssh://git@github.com/" = {
+        insteadOf = "https://github.com/";
+      };
+    };
+  };
+
+  # Zsh configuration (fully managed by Home Manager)
+  programs.zsh = {
+    enable = true;
+    enableCompletion = true;
+    autosuggestion.enable = true;
+    syntaxHighlighting.enable = true;
+
+    oh-my-zsh = {
+      enable = true;
+      plugins = [ "git" "docker" "fzf" "tmux" ];
+    };
+
+    initExtra = ''
+      # Starship prompt
+      eval "$(starship init zsh)"
+
+      # Zoxide (smarter cd)
+      eval "$(zoxide init zsh)"
+
+      # Add snap bin to PATH (for any snap packages installed outside of Nix)
+      export PATH=$PATH:/snap/bin
+
+      # Ensure Nix profile is in PATH with priority
+      export PATH=$HOME/.nix-profile/bin:$PATH
+
+      # Source local customizations if they exist
+      [ -f ~/.zshrc.local ] && source ~/.zshrc.local
+    '';
+
+    shellAliases = {
+      # Common shortcuts
+      ll = "ls -lah";
+      la = "ls -A";
+      l = "ls -CF";
+
+      # Git shortcuts (additional to oh-my-zsh)
+      gs = "git status";
+      gp = "git push";
+      gl = "git pull";
+
+      # Better defaults using new tools
+      cat = "bat";
+      find = "fd";
+      grep = "rg";
+
+      # Docker shortcuts
+      dps = "docker ps";
+      dpa = "docker ps -a";
+      di = "docker images";
+
+      # Zoxide
+      cd = "z";
+    };
+  };
+
+  # Starship prompt configuration
+  programs.starship = {
+    enable = true;
+    enableZshIntegration = true;
+    settings = {
+      add_newline = true;
+      character = {
+        success_symbol = "[➜](bold green)";
+        error_symbol = "[➜](bold red)";
+      };
+      git_branch = {
+        symbol = " ";
+      };
+      git_status = {
+        conflicted = "⚔️ ";
+        ahead = "⇡\${count}";
+        behind = "⇣\${count}";
+        diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
+        untracked = "🤷 ";
+        stashed = "📦 ";
+        modified = "📝 ";
+        staged = "✅ \${count}";
+        renamed = "➡️ ";
+        deleted = "🗑️ ";
+      };
+      docker_context = {
+        symbol = " ";
+      };
+      nodejs = {
+        symbol = " ";
+      };
+      python = {
+        symbol = " ";
+      };
+    };
+  };
+
+  # Tmux configuration
+  programs.tmux = {
+    enable = true;
+    clock24 = true;
+    keyMode = "vi";
+    mouse = true;
+    prefix = "C-a";  # Change prefix from C-b to C-a
+    terminal = "screen-256color";
+    extraConfig = ''
+      # Start window numbering at 1
+      set -g base-index 1
+      setw -g pane-base-index 1
+
+      # Reload config
+      bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded!"
+
+      # Split panes using | and -
+      bind | split-window -h
+      bind - split-window -v
+      unbind '"'
+      unbind %
+
+      # Switch panes using Alt-arrow without prefix
+      bind -n M-Left select-pane -L
+      bind -n M-Right select-pane -R
+      bind -n M-Up select-pane -U
+      bind -n M-Down select-pane -D
+
+      # Status bar
+      set -g status-style 'bg=colour234 fg=colour137'
+      set -g status-left ""
+      set -g status-right '#[fg=colour233,bg=colour245] %Y-%m-%d #[fg=colour233,bg=colour245] %H:%M '
+    '';
+  };
+
+  # Neovim - basic config (user can extend later)
+  programs.neovim = {
+    enable = true;
+    viAlias = true;
+    vimAlias = true;
+    defaultEditor = true;
+    extraConfig = ''
+      " Basic settings
+      set number
+      set relativenumber
+      set expandtab
+      set tabstop=2
+      set shiftwidth=2
+      set smartindent
+      set mouse=a
+      set clipboard=unnamedplus
+
+      " Search settings
+      set ignorecase
+      set smartcase
+      set incsearch
+      set hlsearch
+
+      " Clear search highlighting
+      nnoremap <Esc> :noh<CR>
+    '';
+  };
+
+  # Bat configuration
+  programs.bat = {
+    enable = true;
+    config = {
+      theme = "TwoDark";
+      pager = "less -FR";
+    };
+  };
+
+  # Fzf configuration
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
+  # Zoxide configuration
+  programs.zoxide = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
+  # Zellij configuration files
+  xdg.configFile."zellij/config.kdl".text = ''
+    // Zellij configuration
+    theme "default"
+    default_shell "zsh"
+
+    simplified_ui true
+    pane_frames false
+
+    keybinds {
+        normal {
+            bind "Ctrl a" { SwitchToMode "tmux"; }
+        }
+    }
+  '';
+}
