@@ -32,7 +32,7 @@ zsh:
 
 verify:
 	@echo "Verifying installation..."
-	@zsh scripts/verify-env.sh
+	@bash scripts/verify-env.sh
 
 # Testing targets
 test-docker:
@@ -47,8 +47,7 @@ test-syntax:
 	@bash -n scripts/post-install.sh && echo "  ✓ post-install.sh"
 	@bash -n scripts/test-docker.sh && echo "  ✓ test-docker.sh"
 	@bash -n scripts/test-in-docker.sh && echo "  ✓ test-in-docker.sh"
-	@echo "Checking zsh scripts..."
-	@zsh -n scripts/verify-env.sh && echo "  ✓ verify-env.sh"
+	@bash -n scripts/verify-env.sh && echo "  ✓ verify-env.sh"
 	@echo ""
 	@echo "✓ All scripts have valid syntax"
 
@@ -69,5 +68,5 @@ nix-check:
 		echo "This check requires Nix to be installed"; \
 		exit 1; \
 	fi
-	@cd home-manager && nix flake check
+	@cd home-manager && nix --extra-experimental-features 'nix-command flakes' flake check
 	@echo "✓ Nix flake configuration is valid"
