@@ -149,81 +149,21 @@ if command -v home-manager &> /dev/null; then
     echo_success "Home Manager already installed"
 else
     echo_info "Installing Home Manager..."
-    # Detect architecture and user for flake configuration
+    # Detect appropriate flake configuration
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    FLAKE_CONFIG=$(bash "${SCRIPT_DIR}/detect-config.sh")
     ARCH=$(uname -m)
     CURRENT_USER="${USER:-$(whoami)}"
     
-    # Select appropriate configuration based on architecture and user
-    if [ "${CURRENT_USER}" = "testuser" ]; then
-        # Docker test environment
-        if [ "${ARCH}" = "aarch64" ]; then
-            FLAKE_CONFIG="testuser"
-        else
-            FLAKE_CONFIG="testuser-x86"
-        fi
-    else
-        # Production/normal environment
-        if [ "${ARCH}" = "aarch64" ]; then
-            FLAKE_CONFIG="ubuntu-aarch64"
-        else
-            FLAKE_CONFIG="ubuntu"
-        fi
-    fi
-    
     echo_info "Detected: arch=${ARCH}, user=${CURRENT_USER}, using config=${FLAKE_CONFIG}"
-    nix run home-manager/release-24.05 -- switch --flake ./home-manager#${FLAKE_CONFIG}
+    nix run home-manager/release-24.05 -- switch --flake ./home-manager#"${FLAKE_CONFIG}"
     echo_success "Home Manager installed successfully"
 fi
 
 # 7. Configure Git
 echo ""
-echo_info "Configuring Git..."
-
-# Check if git config is already set
-CURRENT_NAME=$(git config --global user.name 2>/dev/null || true)
-CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || true)
-
-# Detect CI environment (GitHub Actions, GitLab CI, Jenkins, etc.)
-if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ] || [ -n "${GITLAB_CI:-}" ]; then
-    echo_info "CI environment detected, skipping interactive Git configuration"
-    if [ -n "${CURRENT_NAME}" ] && [ -n "${CURRENT_EMAIL}" ]; then
-        echo_success "Git already configured: ${CURRENT_NAME} <${CURRENT_EMAIL}>"
-    else
-        echo_info "Git not configured. Configure it before running 'make install'"
-        echo_info "Run: git config --global user.name 'Your Name'"
-        echo_info "Run: git config --global user.email 'your@email.com'"
-    fi
-else
-    # Interactive mode for local usage
-    if [ -n "${CURRENT_NAME}" ] && [ -n "${CURRENT_EMAIL}" ]; then
-        echo_success "Git already configured:"
-        echo "  Name:  ${CURRENT_NAME}"
-        echo "  Email: ${CURRENT_EMAIL}"
-        echo ""
-        read -p "Do you want to reconfigure? (y/N): " -r RECONFIGURE
-        if [[ ! ${RECONFIGURE} =~ ^[Yy]$ ]]; then
-            echo_info "Keeping existing git configuration"
-        else
-            CURRENT_NAME=""
-            CURRENT_EMAIL=""
-        fi
-    fi
-
-    if [ -z "${CURRENT_NAME}" ] || [ -z "${CURRENT_EMAIL}" ]; then
-        echo ""
-        echo "Please enter your Git configuration:"
-        read -p "Git Name (e.g., John Doe): " -r GIT_NAME
-        read -p "Git Email (e.g., john@example.com): " -r GIT_EMAIL
-        
-        if [ -n "${GIT_NAME}" ] && [ -n "${GIT_EMAIL}" ]; then
-            git config --global user.name "${GIT_NAME}"
-            git config --global user.email "${GIT_EMAIL}"
-            echo_success "Git configured: ${GIT_NAME} <${GIT_EMAIL}>"
-        else
-            echo_info "Git configuration skipped (you can configure it later with 'make install')"
-        fi
-    fi
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "${SCRIPT_DIR}/configure-git.sh"
 
 # Done!
 echo ""

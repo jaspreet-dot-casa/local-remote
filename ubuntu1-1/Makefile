@@ -1,5 +1,8 @@
 .PHONY: setup install zsh verify help test-docker test-syntax shellcheck nix-check
 
+# Get the directory where this Makefile resides
+ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 help:
 	@echo "Available targets:"
 	@echo ""
@@ -17,59 +20,47 @@ help:
 
 setup:
 	@echo "Running setup script..."
-	@bash scripts/setup.sh
+	@bash $(ROOT)scripts/setup.sh
 
 install:
 	@echo "Installing packages via Home Manager..."
-	@ARCH=$$(uname -m); \
+	@FLAKE_CONFIG=$$(bash $(ROOT)scripts/detect-config.sh); \
+	ARCH=$$(uname -m); \
 	CURRENT_USER=$${USER:-$$(whoami)}; \
-	if [ "$$CURRENT_USER" = "testuser" ]; then \
-		if [ "$$ARCH" = "aarch64" ]; then \
-			FLAKE_CONFIG="testuser"; \
-		else \
-			FLAKE_CONFIG="testuser-x86"; \
-		fi; \
-	else \
-		if [ "$$ARCH" = "aarch64" ]; then \
-			FLAKE_CONFIG="ubuntu-aarch64"; \
-		else \
-			FLAKE_CONFIG="ubuntu"; \
-		fi; \
-	fi; \
 	echo "Detected: arch=$$ARCH, user=$$CURRENT_USER, config=$$FLAKE_CONFIG"; \
-	home-manager switch --flake ./home-manager#$$FLAKE_CONFIG
+	home-manager switch --flake $(ROOT)home-manager#$$FLAKE_CONFIG
 	@echo ""
 	@echo "Configuring git (interactive if not set)..."
-	@bash scripts/configure-git.sh
+	@bash $(ROOT)scripts/configure-git.sh
 
 zsh:
 	@echo "Changing default shell to zsh..."
-	@bash scripts/post-install.sh
+	@bash $(ROOT)scripts/post-install.sh
 
 verify:
 	@echo "Verifying installation..."
-	@bash scripts/verify-env.sh
+	@bash $(ROOT)scripts/verify-env.sh
 
 # Testing targets
 test-docker:
 	@echo "Running Docker-based integration test..."
-	@bash scripts/test-docker.sh
+	@bash $(ROOT)scripts/test-docker.sh
 
 test-syntax:
 	@echo "Checking script syntax..."
 	@echo "Checking bash scripts..."
-	@bash -n scripts/setup.sh && echo "  ✓ setup.sh"
-	@bash -n scripts/configure-git.sh && echo "  ✓ configure-git.sh"
-	@bash -n scripts/post-install.sh && echo "  ✓ post-install.sh"
-	@bash -n scripts/test-docker.sh && echo "  ✓ test-docker.sh"
-	@bash -n scripts/test-in-docker.sh && echo "  ✓ test-in-docker.sh"
-	@bash -n scripts/verify-env.sh && echo "  ✓ verify-env.sh"
+	@bash -n $(ROOT)scripts/setup.sh && echo "  ✓ setup.sh"
+	@bash -n $(ROOT)scripts/configure-git.sh && echo "  ✓ configure-git.sh"
+	@bash -n $(ROOT)scripts/post-install.sh && echo "  ✓ post-install.sh"
+	@bash -n $(ROOT)scripts/test-docker.sh && echo "  ✓ test-docker.sh"
+	@bash -n $(ROOT)scripts/test-in-docker.sh && echo "  ✓ test-in-docker.sh"
+	@bash -n $(ROOT)scripts/verify-env.sh && echo "  ✓ verify-env.sh"
 	@echo ""
 	@echo "✓ All scripts have valid syntax"
 
 shellcheck:
 	@echo "Running shellcheck on all scripts..."
-	@shellcheck scripts/*.sh && echo "✓ All scripts passed shellcheck" || \
+	@shellcheck $(ROOT)scripts/*.sh && echo "✓ All scripts passed shellcheck" || \
 		(echo "Error: shellcheck failed or is not installed"; \
 		 echo "Install with: brew install shellcheck (macOS) or apt-get install shellcheck (Ubuntu)"; \
 		 exit 1)

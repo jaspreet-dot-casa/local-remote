@@ -17,6 +17,21 @@ echo_info() { echo -e "${YELLOW}➜${NC} $1"; }
 CURRENT_NAME=$(git config --global user.name 2>/dev/null || true)
 CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || true)
 
+# Detect CI environment (GitHub Actions, GitLab CI, Jenkins, etc.)
+if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ] || [ -n "${GITLAB_CI:-}" ]; then
+    echo_info "CI environment detected, skipping interactive Git configuration"
+    if [ -n "${CURRENT_NAME}" ] && [ -n "${CURRENT_EMAIL}" ]; then
+        echo_success "Git already configured: ${CURRENT_NAME} <${CURRENT_EMAIL}>"
+    else
+        echo_warning "Git not configured in CI environment"
+        echo_info "To configure, run these commands before 'make install':"
+        echo_info "  git config --global user.name 'Your Name'"
+        echo_info "  git config --global user.email 'your@email.com'"
+    fi
+    exit 0
+fi
+
+# Interactive mode for local usage
 if [ -n "${CURRENT_NAME}" ] && [ -n "${CURRENT_EMAIL}" ]; then
     echo_success "Git already configured:"
     echo "  Name:  ${CURRENT_NAME}"
