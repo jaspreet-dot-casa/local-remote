@@ -11,22 +11,34 @@ NC='\033[0m'
 echo_success() { echo -e "${GREEN}✓${NC} $1"; }
 echo_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
 echo_error() { echo -e "${RED}✗${NC} $1"; }
+echo_info() { echo -e "${YELLOW}➜${NC} $1"; }
 
-# Check if .env exists
-if [ ! -f .env ]; then
-    echo_error ".env file not found"
-    echo "Please create .env from .env.example and fill in your details"
-    exit 1
+# Check if git config is already set
+CURRENT_NAME=$(git config --global user.name 2>/dev/null || true)
+CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || true)
+
+if [ -n "$CURRENT_NAME" ] && [ -n "$CURRENT_EMAIL" ]; then
+    echo_success "Git already configured:"
+    echo "  Name:  $CURRENT_NAME"
+    echo "  Email: $CURRENT_EMAIL"
+    echo ""
+    read -p "Do you want to reconfigure? (y/N): " -r RECONFIGURE
+    if [[ ! $RECONFIGURE =~ ^[Yy]$ ]]; then
+        echo_info "Keeping existing git configuration"
+        exit 0
+    fi
 fi
 
-# Source .env
-# shellcheck source=../.env
-source .env
+# Prompt for git configuration
+echo ""
+echo "Please enter your Git configuration:"
+read -p "Git Name (e.g., John Doe): " -r GIT_NAME
+read -p "Git Email (e.g., john@example.com): " -r GIT_EMAIL
 
-# Validate and set git config
+# Validate input
 if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
-    echo_warning "GIT_NAME or GIT_EMAIL not set in .env"
-    echo "Git user configuration skipped. Please update .env and run 'make install' again"
+    echo_warning "Git name or email not provided"
+    echo "Git configuration skipped. You can run this script again later."
     exit 0
 fi
 

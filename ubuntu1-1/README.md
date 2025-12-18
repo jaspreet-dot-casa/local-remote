@@ -34,41 +34,31 @@ cd ~/ubuntu1-1
 
 ### 3. Run setup (first time only)
 
-This installs Nix, Docker, Home Manager, and creates .env:
+This installs Nix, Docker, Home Manager, and prompts for Git configuration:
 
 ```bash
 make setup
 ```
 
-### 4. Configure your git identity
+During setup, you'll be prompted to configure your Git identity (name and email).
 
-Edit `.env` and fill in your details:
+### 4. Install packages
 
-```bash
-vim .env
-```
-
-```bash
-# .env
-GIT_NAME=John Doe
-GIT_EMAIL=john@example.com
-```
-
-### 5. Install packages
-
-This installs zsh, oh-my-zsh, and all tools via Home Manager:
+This installs zsh, oh-my-zsh, and all tools via Home Manager. If Git wasn't configured during setup, you'll be prompted again:
 
 ```bash
 make install
 ```
 
-### 6. Change default shell to zsh
+### 5. Change default shell
+
+To use zsh:
 
 ```bash
 make zsh
 ```
 
-### 7. Log out and back in
+### 6. Log out and back in
 
 For docker group and shell changes to take effect:
 
@@ -77,7 +67,7 @@ exit
 # SSH back in
 ```
 
-### 8. Verify installation
+### 7. Verify installation
 
 ```bash
 make verify
@@ -190,20 +180,19 @@ After editing, run `make install` to apply changes.
 
 ## Git Configuration
 
-Git user name and email are configured via the `.env` file:
+Git user name and email are configured interactively during setup:
 
-1. Edit `.env`:
+1. During `make setup`, you'll be prompted for your Git name and email
+2. If you skip it or want to reconfigure later, run:
    ```bash
-   GIT_NAME=Your Name
-   GIT_EMAIL=your@email.com
+   ./scripts/configure-git.sh
+   ```
+   or
+   ```bash
+   make install  # Will prompt if not already configured
    ```
 
-2. Apply changes:
-   ```bash
-   make install
-   ```
-
-The `.env` file is gitignored to keep your credentials private. Use `.env.example` as a template.
+Your Git configuration is stored in `~/.gitconfig` (global).
 
 ## Testing
 
@@ -302,11 +291,11 @@ Try:
 home-manager switch --flake ./home-manager#ubuntu --refresh
 ```
 
-### .env changes not applying
+### Git configuration not set
 
-After editing `.env`:
+To configure or reconfigure Git:
 ```bash
-make install  # Re-runs configure-git.sh
+./scripts/configure-git.sh
 ```
 
 ## File Structure
@@ -319,13 +308,11 @@ ubuntu1-1/
 │   └── config/                # Tool configurations
 ├── scripts/
 │   ├── setup.sh               # Setup script
-│   ├── configure-git.sh       # Git configuration from .env
+│   ├── configure-git.sh       # Git configuration (interactive)
 │   ├── post-install.sh        # Shell change script
 │   ├── verify-env.sh          # Verification script
 │   ├── test-docker.sh         # Docker test runner
 │   └── test-in-docker.sh      # Container tests
-├── .env.example               # Template for .env
-├── .env                       # Your git config (gitignored)
 ├── .dockerignore              # Docker build exclusions
 ├── .shellcheckrc              # ShellCheck configuration
 ├── Dockerfile.test            # Docker test container

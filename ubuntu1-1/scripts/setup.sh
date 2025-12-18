@@ -55,6 +55,9 @@ echo_info "Checking Nix installation..."
 if command -v nix &> /dev/null; then
     echo_success "Nix already installed, skipping..."
 else
+    # Security Note: This command pipes curl output directly to sh for installation.
+    # HTTPS/TLS provides protection against MITM attacks for the official nixos.org source.
+    # For additional security, you can manually download, inspect, and run the installer.
     echo_info "Installing Nix (multi-user)..."
     sh <(curl -L https://nixos.org/nix/install) --daemon --yes
     echo_success "Nix installed successfully"
@@ -133,27 +136,41 @@ else
     echo_success "Home Manager installed successfully"
 fi
 
-# 7. Create .env files
+# 7. Configure Git
 echo ""
-echo_info "Creating .env files..."
+echo_info "Configuring Git..."
 
-# Create .env.example if it doesn't exist
-if [ ! -f .env.example ]; then
-    cat > .env.example << 'EOF'
-# Git Configuration
-# Copy this file to .env and fill in your details
-GIT_NAME=
-GIT_EMAIL=
-EOF
-    echo_success ".env.example created"
+# Check if git config is already set
+CURRENT_NAME=$(git config --global user.name 2>/dev/null || true)
+CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || true)
+
+if [ -n "$CURRENT_NAME" ] && [ -n "$CURRENT_EMAIL" ]; then
+    echo_success "Git already configured:"
+    echo "  Name:  $CURRENT_NAME"
+    echo "  Email: $CURRENT_EMAIL"
+    echo ""
+    read -p "Do you want to reconfigure? (y/N): " -r RECONFIGURE
+    if [[ ! $RECONFIGURE =~ ^[Yy]$ ]]; then
+        echo_info "Keeping existing git configuration"
+    else
+        CURRENT_NAME=""
+        CURRENT_EMAIL=""
+    fi
 fi
 
-# Create .env if it doesn't exist
-if [ ! -f .env ]; then
-    cp .env.example .env
-    echo_success ".env created (please fill in your details)"
-else
-    echo_success ".env already exists"
+if [ -z "$CURRENT_NAME" ] || [ -z "$CURRENT_EMAIL" ]; then
+    echo ""
+    echo "Please enter your Git configuration:"
+    read -p "Git Name (e.g., John Doe): " -r GIT_NAME
+    read -p "Git Email (e.g., john@example.com): " -r GIT_EMAIL
+    
+    if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
+        git config --global user.name "$GIT_NAME"
+        git config --global user.email "$GIT_EMAIL"
+        echo_success "Git configured: $GIT_NAME <$GIT_EMAIL>"
+    else
+        echo_info "Git configuration skipped (you can configure it later with 'make install')"
+    fi
 fi
 
 # Done!
@@ -163,9 +180,8 @@ echo_success "Setup completed successfully!"
 echo "════════════════════════════════════════════"
 echo ""
 echo "Next steps:"
-echo "  1. Edit .env and fill in your GIT_NAME and GIT_EMAIL"
-echo "  2. Run: make install    (installs zsh, oh-my-zsh, all packages)"
-echo "  3. Run: make zsh        (changes default shell to zsh)"
-echo "  4. Log out and back in  (for docker group + shell change)"
-echo "  5. Run: make verify     (verify everything works)"
+echo "  1. Run: make install    (installs zsh, oh-my-zsh, all packages)"
+echo "  2. Run: make zsh        (changes default shell to zsh)"
+echo "  3. Log out and back in  (for docker group + shell change)"
+echo "  4. Run: make verify     (verify everything works)"
 echo ""

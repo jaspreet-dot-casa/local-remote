@@ -4,7 +4,7 @@ help:
 	@echo "Available targets:"
 	@echo ""
 	@echo "Setup & Installation:"
-	@echo "  make setup         - First-time setup (Nix, Docker, Home Manager, .env)"
+	@echo "  make setup         - First-time setup (Nix, Docker, Home Manager, Git config)"
 	@echo "  make install       - Install/update packages via Home Manager"
 	@echo "  make zsh           - Change default shell to zsh (run after install)"
 	@echo "  make verify        - Verify installation on current system"
@@ -23,7 +23,7 @@ install:
 	@echo "Installing packages via Home Manager..."
 	@home-manager switch --flake ./home-manager#ubuntu
 	@echo ""
-	@echo "Configuring git from .env..."
+	@echo "Configuring git (interactive if not set)..."
 	@bash scripts/configure-git.sh
 
 zsh:

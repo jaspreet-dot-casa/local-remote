@@ -9,13 +9,11 @@ echo ""
 echo "Step 1: Running setup..."
 make setup
 
-# Step 2: Configure .env for testing
+# Step 2: Configure Git for testing
 echo ""
-echo "Step 2: Configuring .env..."
-cat > .env << EOF
-GIT_NAME=Docker Test User
-GIT_EMAIL=docker-test@example.com
-EOF
+echo "Step 2: Configuring Git..."
+git config --global user.name "Docker Test User"
+git config --global user.email "docker-test@example.com"
 
 # Step 3: Source Nix and run install
 echo ""

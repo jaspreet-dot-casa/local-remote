@@ -7,7 +7,7 @@
   # User info (adjust as needed)
   home.username = builtins.getEnv "USER";
   home.homeDirectory = builtins.getEnv "HOME";
-  
+
   # This value determines the Home Manager release
   home.stateVersion = "24.05";
 
@@ -104,7 +104,7 @@
       # Zoxide (smarter cd)
       eval "$(zoxide init zsh)"
 
-      # Add snap to PATH (for btop and other snap packages)
+      # Add snap bin to PATH (for any snap packages installed outside of Nix)
       export PATH=$PATH:/snap/bin
 
       # Ensure Nix profile is in PATH with priority
@@ -119,22 +119,22 @@
       ll = "ls -lah";
       la = "ls -A";
       l = "ls -CF";
-      
+
       # Git shortcuts (additional to oh-my-zsh)
       gs = "git status";
       gp = "git push";
       gl = "git pull";
-      
+
       # Better defaults using new tools
       cat = "bat";
       find = "fd";
       grep = "rg";
-      
+
       # Docker shortcuts
       dps = "docker ps";
       dpa = "docker ps -a";
       di = "docker images";
-      
+
       # Zoxide
       cd = "z";
     };
@@ -228,13 +228,13 @@
       set smartindent
       set mouse=a
       set clipboard=unnamedplus
-      
+
       " Search settings
       set ignorecase
       set smartcase
       set incsearch
       set hlsearch
-      
+
       " Clear search highlighting
       nnoremap <Esc> :noh<CR>
     '';
@@ -266,10 +266,10 @@
     // Zellij configuration
     theme "default"
     default_shell "zsh"
-    
+
     simplified_ui true
     pane_frames false
-    
+
     keybinds {
         normal {
             bind "Ctrl a" { SwitchToMode "tmux"; }

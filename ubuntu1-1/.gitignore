@@ -2,9 +2,6 @@
 home-manager/flake.lock
 home-manager/result
 
-# Environment variables
-.env
-
 # Temporary files
 .tmp/
 *.swp

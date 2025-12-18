@@ -188,42 +188,26 @@ else
     ((ERRORS++))
 fi
 
-# 10. Check .env configuration
-echo_header ".env Configuration"
+# 10. Check Git configuration
+echo_header "Git Configuration"
 
-if [ -f .env ]; then
-    echo_success ".env file exists"
-    
-    source .env
-    
-    if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
-        echo_success "GIT_NAME set: $GIT_NAME"
-        echo_success "GIT_EMAIL set: $GIT_EMAIL"
-        
-        # Verify git is actually configured with these values
-        ACTUAL_NAME=$(git config --global user.name)
-        ACTUAL_EMAIL=$(git config --global user.email)
-        
-        if [ "$ACTUAL_NAME" = "$GIT_NAME" ]; then
-            echo_success "Git user.name matches .env"
-        else
-            echo_error "Git user.name mismatch (git: '$ACTUAL_NAME', .env: '$GIT_NAME')"
-            ((ERRORS++))
-        fi
-        
-        if [ "$ACTUAL_EMAIL" = "$GIT_EMAIL" ]; then
-            echo_success "Git user.email matches .env"
-        else
-            echo_error "Git user.email mismatch (git: '$ACTUAL_EMAIL', .env: '$GIT_EMAIL')"
-            ((ERRORS++))
-        fi
-    else
-        echo_info "GIT_NAME or GIT_EMAIL not set in .env"
-        echo_info "Please update .env and run 'make install'"
-    fi
+GIT_NAME=$(git config --global user.name 2>/dev/null || true)
+GIT_EMAIL=$(git config --global user.email 2>/dev/null || true)
+
+if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
+    echo_success "Git user.name: $GIT_NAME"
+    echo_success "Git user.email: $GIT_EMAIL"
 else
-    echo_error ".env file not found"
-    ((ERRORS++))
+    echo_warning "Git user not configured"
+    echo_info "Run scripts/configure-git.sh or 'make install' to configure git"
+    if [ -z "$GIT_NAME" ]; then
+        echo_error "Git user.name not set"
+        ((ERROR_COUNT++))
+    fi
+    if [ -z "$GIT_EMAIL" ]; then
+        echo_error "Git user.email not set"
+        ((ERROR_COUNT++))
+    fi
 fi
 
 # Summary
