@@ -33,7 +33,12 @@ jobs:
             experimental-features = nix-command flakes
 
       - name: Run Nix flake check
-        run: make nix-check
+        run: |
+          # Source Nix profile to get nix in PATH
+          if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+          fi
+          make nix-check
 
   syntax-check:
     name: Check Script Syntax
@@ -58,6 +63,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
+          export PATH=/usr/bin:$PATH
           make shellcheck
 
   integration-test:

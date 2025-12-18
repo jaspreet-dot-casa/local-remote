@@ -5,8 +5,13 @@
   programs.home-manager.enable = true;
 
   # User info (adjust as needed)
-  home.username = builtins.getEnv "USER";
-  home.homeDirectory = builtins.getEnv "HOME";
+  # Handle CI environments where USER/HOME may be empty during evaluation
+  home.username = 
+    let envUser = builtins.getEnv "USER";
+    in if envUser != "" then envUser else "runner";
+  home.homeDirectory = 
+    let envHome = builtins.getEnv "HOME";
+    in if envHome != "" then envHome else "/root";
 
   # This value determines the Home Manager release
   home.stateVersion = "24.05";
