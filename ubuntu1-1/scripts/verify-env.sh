@@ -19,17 +19,18 @@ ERRORS=0
 check_command() {
     local cmd=$1
     local expected_path=$2
+    local actual_path
     
-    if command -v $cmd &> /dev/null; then
-        local actual_path=$(which $cmd)
-        if [[ -n "$expected_path" && "$actual_path" != *"$expected_path"* ]]; then
-            echo_error "$cmd found at $actual_path (expected in $expected_path)"
+    if command -v "${cmd}" &> /dev/null; then
+        actual_path=$(which "${cmd}")
+        if [[ -n "${expected_path}" && "${actual_path}" != *"${expected_path}"* ]]; then
+            echo_error "${cmd} found at ${actual_path} (expected in ${expected_path})"
             ((ERRORS++))
         else
-            echo_success "$cmd: $actual_path"
+            echo_success "${cmd}: ${actual_path}"
         fi
     else
-        echo_error "$cmd not found"
+        echo_error "${cmd} not found"
         ((ERRORS++))
     fi
 }
@@ -55,14 +56,14 @@ check_command "home-manager" ".nix-profile"
 
 # 3. Check PATH priority (Nix should come before /usr/bin)
 echo_header "PATH Priority"
-if [[ "$PATH" == *".nix-profile/bin"* ]]; then
+if [[ "${PATH}" == *".nix-profile/bin"* ]]; then
     echo_success "Nix profile in PATH"
     
     # Check if Nix comes before /usr/bin
-    local nix_pos=$(echo $PATH | grep -bo ".nix-profile/bin" | cut -d: -f1)
-    local usr_pos=$(echo $PATH | grep -bo "/usr/bin" | cut -d: -f1)
+    nix_pos=$(echo "${PATH}" | grep -bo ".nix-profile/bin" | cut -d: -f1)
+    usr_pos=$(echo "${PATH}" | grep -bo "/usr/bin" | cut -d: -f1)
     
-    if [[ $nix_pos -lt $usr_pos ]]; then
+    if [[ ${nix_pos} -lt ${usr_pos} ]]; then
         echo_success "Nix paths have priority over system paths"
     else
         echo_error "System paths come before Nix paths (priority issue)"
