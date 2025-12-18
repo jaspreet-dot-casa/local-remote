@@ -53,20 +53,15 @@ test-syntax:
 
 shellcheck:
 	@echo "Running shellcheck on all scripts..."
-	@if ! command -v shellcheck &> /dev/null; then \
-		echo "Error: shellcheck is not installed"; \
-		echo "Install with: brew install shellcheck (macOS) or apt-get install shellcheck (Ubuntu)"; \
-		exit 1; \
-	fi
-	@shellcheck scripts/*.sh
-	@echo "✓ All scripts passed shellcheck"
+	@shellcheck scripts/*.sh && echo "✓ All scripts passed shellcheck" || \
+		(echo "Error: shellcheck failed or is not installed"; \
+		 echo "Install with: brew install shellcheck (macOS) or apt-get install shellcheck (Ubuntu)"; \
+		 exit 1)
 
 nix-check:
 	@echo "Checking Nix flake configuration..."
-	@if ! command -v nix &> /dev/null; then \
-		echo "Error: nix is not installed"; \
-		echo "This check requires Nix to be installed"; \
-		exit 1; \
-	fi
-	@cd home-manager && nix --extra-experimental-features 'nix-command flakes' flake check
-	@echo "✓ Nix flake configuration is valid"
+	@cd home-manager && nix --extra-experimental-features 'nix-command flakes' flake check && \
+		echo "✓ Nix flake configuration is valid" || \
+		(echo "Error: nix flake check failed or nix is not installed"; \
+		 echo "This check requires Nix to be installed"; \
+		 exit 1)

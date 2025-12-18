@@ -34,10 +34,10 @@ jobs:
 
       - name: Run Nix flake check
         run: |
-          # Source Nix profile to get nix in PATH
-          if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
-            . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
-          fi
+          # cachix/install-nix-action sets up PATH automatically
+          # Just verify nix is available
+          which nix || echo "Nix not found in PATH"
+          nix --version || echo "Nix command failed"
           make nix-check
 
   syntax-check:
