@@ -11,13 +11,21 @@
 
   outputs = { nixpkgs, home-manager, ... }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      # Support both x86_64 and aarch64 Linux systems
+      forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
+      
+      mkHomeConfiguration = system:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          modules = [ ./home.nix ];
+        };
     in {
-      homeConfigurations.ubuntu = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-
-        modules = [ ./home.nix ];
+      homeConfigurations = {
+        # Default configuration (x86_64-linux for Ubuntu servers)
+        ubuntu = mkHomeConfiguration "x86_64-linux";
+        
+        # ARM configuration (for testing on Apple Silicon or ARM servers)
+        ubuntu-aarch64 = mkHomeConfiguration "aarch64-linux";
       };
     };
 }

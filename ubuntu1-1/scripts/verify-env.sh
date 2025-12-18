@@ -76,15 +76,15 @@ fi
 
 # 4. Check shell
 echo_header "Shell Configuration"
-if [[ "$SHELL" == *"zsh"* ]]; then
-    echo_success "Default shell: $SHELL"
+if [[ "${SHELL}" == *"zsh"* ]]; then
+    echo_success "Default shell: ${SHELL}"
 else
-    echo_error "Default shell is not zsh: $SHELL"
+    echo_error "Default shell is not zsh: ${SHELL}"
     ((ERRORS++))
 fi
 
-if [[ -n "$ZSH" ]]; then
-    echo_success "Oh-My-Zsh detected: $ZSH"
+if [[ -n "${ZSH}" ]]; then
+    echo_success "Oh-My-Zsh detected: ${ZSH}"
 else
     echo_error "Oh-My-Zsh not detected"
     ((ERRORS++))
@@ -141,15 +141,15 @@ fi
 # 7. Check environment variables
 echo_header "Environment Variables"
 
-if [[ -n "$NIX_PROFILES" ]]; then
+if [[ -n "${NIX_PROFILES}" ]]; then
     echo_success "NIX_PROFILES is set"
 else
     echo_error "NIX_PROFILES not set"
     ((ERRORS++))
 fi
 
-if [[ -n "$HOME" ]]; then
-    echo_success "HOME: $HOME"
+if [[ -n "${HOME}" ]]; then
+    echo_success "HOME: ${HOME}"
 else
     echo_error "HOME not set"
     ((ERRORS++))
@@ -195,17 +195,17 @@ echo_header "Git Configuration"
 GIT_NAME=$(git config --global user.name 2>/dev/null || true)
 GIT_EMAIL=$(git config --global user.email 2>/dev/null || true)
 
-if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
-    echo_success "Git user.name: $GIT_NAME"
-    echo_success "Git user.email: $GIT_EMAIL"
+if [ -n "${GIT_NAME}" ] && [ -n "${GIT_EMAIL}" ]; then
+    echo_success "Git user.name: ${GIT_NAME}"
+    echo_success "Git user.email: ${GIT_EMAIL}"
 else
     echo_warning "Git user not configured"
     echo_info "Run scripts/configure-git.sh or 'make install' to configure git"
-    if [ -z "$GIT_NAME" ]; then
+    if [ -z "${GIT_NAME}" ]; then
         echo_error "Git user.name not set"
         ((ERROR_COUNT++))
     fi
-    if [ -z "$GIT_EMAIL" ]; then
+    if [ -z "${GIT_EMAIL}" ]; then
         echo_error "Git user.email not set"
         ((ERROR_COUNT++))
     fi
@@ -214,12 +214,12 @@ fi
 # Summary
 echo ""
 echo "════════════════════════════════════════════"
-if [[ $ERRORS -eq 0 ]]; then
+if [[ ${ERRORS} -eq 0 ]]; then
     echo_success "All checks passed! Environment is properly configured."
     echo "════════════════════════════════════════════"
     exit 0
 else
-    echo_error "Found $ERRORS issue(s). Please review the errors above."
+    echo_error "Found ${ERRORS} issue(s). Please review the errors above."
     echo "════════════════════════════════════════════"
     exit 1
 fi

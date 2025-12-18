@@ -11,6 +11,7 @@ RUN apt-get update && \
     git \
     curl \
     xz-utils \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a test user (non-root) with sudo access

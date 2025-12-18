@@ -25,7 +25,7 @@ make install
 # Step 4: Verify tools are installed
 echo ""
 echo "Step 4: Verifying installed tools..."
-export PATH=$HOME/.nix-profile/bin:$PATH
+export PATH=${HOME}/.nix-profile/bin:${PATH}
 
 # Check a subset of critical tools
 tools=(
@@ -48,11 +48,11 @@ tools=(
 
 echo "Checking installed tools:"
 for tool in "${tools[@]}"; do
-    if command -v "$tool" &> /dev/null; then
-        version=$("$tool" --version 2>&1 | head -1 || echo "version unknown")
-        echo "  ✓ $tool: $version"
+    if command -v "${tool}" &> /dev/null; then
+        version=$("${tool}" --version 2>&1 | head -1 || echo "version unknown")
+        echo "  ✓ ${tool}: ${version}"
     else
-        echo "  ✗ $tool: NOT FOUND"
+        echo "  ✗ ${tool}: NOT FOUND"
         exit 1
     fi
 done
@@ -63,12 +63,12 @@ echo "Step 5: Verifying git configuration..."
 git_name=$(git config --global user.name)
 git_email=$(git config --global user.email)
 
-if [ "$git_name" = "Docker Test User" ] && [ "$git_email" = "docker-test@example.com" ]; then
-    echo "  ✓ Git configured correctly: $git_name <$git_email>"
+if [ "${git_name}" = "Docker Test User" ] && [ "${git_email}" = "docker-test@example.com" ]; then
+    echo "  ✓ Git configured correctly: ${git_name} <${git_email}>"
 else
     echo "  ✗ Git configuration mismatch"
     echo "    Expected: Docker Test User <docker-test@example.com>"
-    echo "    Got: $git_name <$git_email>"
+    echo "    Got: ${git_name} <${git_email}>"
     exit 1
 fi
 
@@ -76,10 +76,10 @@ fi
 echo ""
 echo "Step 6: Verifying git delta integration..."
 pager=$(git config --global core.pager)
-if [ "$pager" = "delta" ]; then
+if [ "${pager}" = "delta" ]; then
     echo "  ✓ Git pager set to delta"
 else
-    echo "  ✗ Git pager not set to delta: $pager"
+    echo "  ✗ Git pager not set to delta: ${pager}"
     exit 1
 fi
 

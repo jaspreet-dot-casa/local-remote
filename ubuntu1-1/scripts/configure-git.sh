@@ -17,13 +17,13 @@ echo_info() { echo -e "${YELLOW}➜${NC} $1"; }
 CURRENT_NAME=$(git config --global user.name 2>/dev/null || true)
 CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || true)
 
-if [ -n "$CURRENT_NAME" ] && [ -n "$CURRENT_EMAIL" ]; then
+if [ -n "${CURRENT_NAME}" ] && [ -n "${CURRENT_EMAIL}" ]; then
     echo_success "Git already configured:"
-    echo "  Name:  $CURRENT_NAME"
-    echo "  Email: $CURRENT_EMAIL"
+    echo "  Name:  ${CURRENT_NAME}"
+    echo "  Email: ${CURRENT_EMAIL}"
     echo ""
     read -p "Do you want to reconfigure? (y/N): " -r RECONFIGURE
-    if [[ ! $RECONFIGURE =~ ^[Yy]$ ]]; then
+    if [[ ! ${RECONFIGURE} =~ ^[Yy]$ ]]; then
         echo_info "Keeping existing git configuration"
         exit 0
     fi
@@ -36,14 +36,14 @@ read -p "Git Name (e.g., John Doe): " -r GIT_NAME
 read -p "Git Email (e.g., john@example.com): " -r GIT_EMAIL
 
 # Validate input
-if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
+if [ -z "${GIT_NAME}" ] || [ -z "${GIT_EMAIL}" ]; then
     echo_warning "Git name or email not provided"
     echo "Git configuration skipped. You can run this script again later."
     exit 0
 fi
 
 # Set git config
-git config --global user.name "$GIT_NAME"
-git config --global user.email "$GIT_EMAIL"
+git config --global user.name "${GIT_NAME}"
+git config --global user.email "${GIT_EMAIL}"
 
-echo_success "Git configured: $GIT_NAME <$GIT_EMAIL>"
+echo_success "Git configured: ${GIT_NAME} <${GIT_EMAIL}>"
