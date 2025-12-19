@@ -19,9 +19,24 @@ GIT_CONFIG_FILE="${GIT_CONFIG_DIR}/config"
 CURRENT_USER="${USER:-$(whoami)}"
 
 # Ensure ~/.config exists and is owned by the current user
-if [ -d "${HOME}/.config" ] && [ ! -w "${HOME}/.config" ]; then
-    echo_warning "${HOME}/.config directory not writable, fixing ownership..."
-    sudo chown -R "${CURRENT_USER}:${CURRENT_USER}" "${HOME}/.config"
+if [ -d "${HOME}/.config" ]; then
+    # Check if writable, fix if not
+    if [ ! -w "${HOME}/.config" ]; then
+        echo_warning "${HOME}/.config directory not writable, fixing ownership..."
+        sudo chown -R "${CURRENT_USER}:${CURRENT_USER}" "${HOME}/.config"
+    fi
+else
+    # Create it if it doesn't exist
+    mkdir -p "${HOME}/.config"
+    chown "${CURRENT_USER}:${CURRENT_USER}" "${HOME}/.config"
+fi
+
+# Ensure ~/.config/git exists and is owned by current user BEFORE any git commands
+if [ ! -d "${GIT_CONFIG_DIR}" ]; then
+    echo_info "Creating git config directory..."
+    mkdir -p "${GIT_CONFIG_DIR}"
+    chown -R "${CURRENT_USER}:${CURRENT_USER}" "${GIT_CONFIG_DIR}"
+    chmod 755 "${GIT_CONFIG_DIR}"
 fi
 
 # Fix git config directory if it exists
