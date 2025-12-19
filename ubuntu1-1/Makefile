@@ -71,9 +71,9 @@ shellcheck:
 		 echo "Install with: brew install shellcheck (macOS) or apt-get install shellcheck (Ubuntu)"; \
 		 exit 1)
 
-nix-check:
+nix-check: gen-user-config
 	@echo "Checking Nix flake configuration..."
-	@cd home-manager && nix --extra-experimental-features 'nix-command flakes' flake check && \
+	@cd $(ROOT)home-manager && nix --extra-experimental-features 'nix-command flakes' flake check && \
 		echo "✓ Nix flake configuration is valid" || \
 		(echo "Error: nix flake check failed or nix is not installed"; \
 		 echo "This check requires Nix to be installed"; \
