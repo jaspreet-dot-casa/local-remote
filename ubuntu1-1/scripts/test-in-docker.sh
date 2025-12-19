@@ -41,6 +41,7 @@ tools=(
     "jq"
     "delta"
     "starship"
+    "tailscale"
 )
 
 echo "Checking installed tools:"
@@ -70,9 +71,34 @@ else
     exit 1
 fi
 
-# Step 5: Verify git delta integration
+# Step 5: Verify Tailscale installation
 echo ""
-echo "Step 5: Verifying git delta integration..."
+echo "Step 5: Verifying Tailscale..."
+if command -v tailscale &> /dev/null; then
+    echo "  ✓ Tailscale CLI installed"
+    
+    tailscale_version=$(tailscale version 2>/dev/null | head -n1 || echo "unknown")
+    echo "  ✓ Version: ${tailscale_version}"
+    
+    # Check config file
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    config_file="${PROJECT_ROOT}/home-manager/config/tailscale.conf"
+    if [ -f "${config_file}" ]; then
+        echo "  ✓ Config file exists"
+    else
+        echo "  ✗ Config file missing"
+        exit 1
+    fi
+    
+    echo "  → Tailscale daemon not tested in Docker (requires system networking)"
+else
+    echo "  ✗ Tailscale not found"
+    exit 1
+fi
+
+# Step 6: Verify git delta integration
+echo ""
+echo "Step 6: Verifying git delta integration..."
 pager=$(git config --global core.pager)
 if [ "${pager}" = "delta" ]; then
     echo "  ✓ Git pager set to delta"
@@ -81,9 +107,9 @@ else
     exit 1
 fi
 
-# Step 6: Verify Nix environment
+# Step 7: Verify Nix environment
 echo ""
-echo "Step 6: Verifying Nix environment..."
+echo "Step 7: Verifying Nix environment..."
 nix --version
 home-manager --version
 echo "  ✓ Nix and Home Manager are working"

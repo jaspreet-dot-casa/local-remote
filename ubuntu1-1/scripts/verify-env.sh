@@ -138,7 +138,43 @@ else
     ((ERRORS++))
 fi
 
-# 7. Check environment variables
+# 7. Check Tailscale
+echo_header "Network Services"
+
+if command -v tailscale &> /dev/null; then
+    tailscale_version=$(tailscale version 2>/dev/null | head -n1 || echo "unknown")
+    echo_success "Tailscale installed: ${tailscale_version}"
+    
+    # Check binary location
+    tailscale_path="$(which tailscale)"
+    if [[ "${tailscale_path}" == *".nix-profile"* ]]; then
+        echo_success "Using Nix-managed Tailscale"
+    else
+        echo_info "Using system Tailscale: ${tailscale_path}"
+    fi
+    
+    # Check daemon (skip in Docker)
+    if [ ! -f /.dockerenv ]; then
+        if systemctl is-active --quiet tailscaled 2>/dev/null; then
+            echo_success "Tailscale daemon running"
+            
+            if tailscale status &> /dev/null 2>&1; then
+                echo_success "Tailscale authenticated and connected"
+            else
+                echo_info "Tailscale not authenticated"
+                echo_info "Run: make post-install"
+            fi
+        else
+            echo_info "Tailscale daemon not running"
+            echo_info "Run: make post-install"
+        fi
+    fi
+else
+    echo_info "Tailscale not installed"
+    echo_info "Run: make install"
+fi
+
+# 8. Check environment variables
 echo_header "Environment Variables"
 
 if [[ -n "${NIX_PROFILES}" ]]; then
@@ -155,7 +191,7 @@ else
     ((ERRORS++))
 fi
 
-# 8. Check zsh integrations
+# 9. Check zsh integrations
 echo_header "Zsh Integrations"
 
 if command -v zoxide &> /dev/null && zoxide --version &> /dev/null; then
@@ -172,7 +208,7 @@ else
     ((ERRORS++))
 fi
 
-# 9. Check git configuration
+# 10. Check git configuration
 echo_header "Git Configuration"
 
 if git config --get core.pager | grep -q delta; then
@@ -188,9 +224,6 @@ else
     echo_error "Git default branch not set to main"
     ((ERRORS++))
 fi
-
-# 10. Check Git configuration
-echo_header "Git Configuration"
 
 GIT_NAME=$(git config --global user.name 2>/dev/null || true)
 GIT_EMAIL=$(git config --global user.email 2>/dev/null || true)

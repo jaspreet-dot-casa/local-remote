@@ -1,4 +1,4 @@
-.PHONY: gen-user-config setup install zsh verify help test-docker test-syntax shellcheck nix-check
+.PHONY: gen-user-config setup install install-nix-pkgs post-install zsh verify help test-docker test-syntax shellcheck nix-check
 
 # Get the directory where this Makefile resides
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -11,11 +11,13 @@ help:
 	@echo "Available targets:"
 	@echo ""
 	@echo "Setup & Installation:"
-	@echo "  make gen-user-config - Generate user-specific Nix configuration"
-	@echo "  make setup         - First-time setup (Nix, Docker, Home Manager, Git config)"
-	@echo "  make install       - Install/update packages via Home Manager"
-	@echo "  make zsh           - Change default shell to zsh (run after install)"
-	@echo "  make verify        - Verify installation on current system"
+	@echo "  make gen-user-config   - Generate user-specific Nix configuration"
+	@echo "  make setup             - First-time setup (Nix, Docker, Home Manager, Git config)"
+	@echo "  make install           - Full installation (packages + post-install) - MAIN TARGET"
+	@echo "  make install-nix-pkgs  - Install/update packages via Home Manager only"
+	@echo "  make post-install      - Run post-install configuration only (shell, Tailscale)"
+	@echo "  make zsh               - Alias for post-install (backward compatibility)"
+	@echo "  make verify            - Verify installation on current system"
 	@echo ""
 	@echo "Testing & Validation:"
 	@echo "  make test-docker   - Run full integration test in Docker (requires Docker)"
@@ -27,7 +29,8 @@ setup:
 	@echo "Running setup script..."
 	@bash $(ROOT)scripts/setup.sh
 
-install: gen-user-config
+# Install Nix packages only (no system changes)
+install-nix-pkgs: gen-user-config
 	@echo "Installing packages via Home Manager..."
 	@FLAKE_CONFIG=$$(bash $(ROOT)scripts/generate-user-config.sh); \
 	ARCH=$$(uname -m); \
@@ -35,9 +38,18 @@ install: gen-user-config
 	echo "Detected: arch=$$ARCH, user=$$CURRENT_USER, config=$$FLAKE_CONFIG"; \
 	home-manager switch --flake $(ROOT)home-manager#$$FLAKE_CONFIG
 
-zsh:
-	@echo "Changing default shell to zsh..."
-	@bash $(ROOT)scripts/post-install.sh
+# Run post-install configuration (system-level setup)
+post-install:
+	@echo "Running post-install configuration..."
+	@bash $(ROOT)scripts/post-install.sh $(ARGS)
+
+# Full installation: packages + post-install (MAIN TARGET)
+install: install-nix-pkgs post-install
+	@echo ""
+	@echo "✓ Full installation complete"
+
+# Backward compatibility
+zsh: post-install
 
 verify:
 	@echo "Verifying installation..."
@@ -57,6 +69,7 @@ test-syntax:
 	@bash -n $(ROOT)scripts/test-docker.sh && echo "  ✓ test-docker.sh"
 	@bash -n $(ROOT)scripts/test-in-docker.sh && echo "  ✓ test-in-docker.sh"
 	@bash -n $(ROOT)scripts/verify-env.sh && echo "  ✓ verify-env.sh"
+	@bash -n $(ROOT)home-manager/scripts/tailscale/post-install.sh && echo "  ✓ tailscale/post-install.sh"
 	@echo ""
 	@echo "✓ All scripts have valid syntax"
 

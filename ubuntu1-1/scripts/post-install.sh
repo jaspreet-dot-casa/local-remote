@@ -4,11 +4,25 @@ set -u
 
 # Colors
 GREEN='\033[0;32m'
+BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo_success() { echo -e "${GREEN}✓${NC} $1"; }
 echo_info() { echo -e "${YELLOW}➜${NC} $1"; }
+echo_section() {
+    echo ""
+    echo "════════════════════════════════════════════"
+    echo -e "${BLUE}$1${NC}"
+    echo "════════════════════════════════════════════"
+}
+
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Pass through arguments to sub-scripts
+ARGS="${*}"
 
 # Find zsh installed by Home Manager
 ZSH_PATH="${HOME}/.nix-profile/bin/zsh"
@@ -34,9 +48,21 @@ else
     echo_success "Default shell is already zsh"
 fi
 
+# Tailscale Setup
+echo_section "Setting up Tailscale..."
+TAILSCALE_SCRIPT="${PROJECT_ROOT}/home-manager/scripts/tailscale/post-install.sh"
+if [ -f "${TAILSCALE_SCRIPT}" ]; then
+    # shellcheck source=/dev/null
+    # shellcheck disable=SC2086
+    bash "${TAILSCALE_SCRIPT}" ${ARGS}
+else
+    echo_info "Tailscale post-install script not found - skipping"
+fi
+
+# Final summary
 echo ""
 echo "════════════════════════════════════════════"
-echo_success "Shell configuration complete!"
+echo_success "Post-install configuration complete!"
 echo "════════════════════════════════════════════"
 echo ""
 echo "Please log out and back in for changes to take effect:"
