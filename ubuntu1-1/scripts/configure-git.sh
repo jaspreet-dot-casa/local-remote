@@ -13,46 +13,46 @@ echo_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
 echo_error() { echo -e "${RED}✗${NC} $1"; }
 echo_info() { echo -e "${YELLOW}➜${NC} $1"; }
 
-# Fix git config file permissions if they exist and are not writable
+# Fix git config file permissions and ownership issues
 GIT_CONFIG_DIR="${HOME}/.config/git"
 GIT_CONFIG_FILE="${GIT_CONFIG_DIR}/config"
 CURRENT_USER="${USER:-$(whoami)}"
 
-if [ -d "${GIT_CONFIG_DIR}" ] && [ ! -w "${GIT_CONFIG_DIR}" ]; then
-    echo_warning "Git config directory not writable, attempting to fix permissions..."
-    # First try without sudo
-    if chmod -R u+w "${GIT_CONFIG_DIR}" 2>/dev/null; then
-        echo_success "Fixed permissions"
-    else
-        # If that fails, try with sudo (likely owned by root)
-        echo_info "Attempting to fix ownership (may require sudo password)..."
-        if sudo chown -R "${CURRENT_USER}:${CURRENT_USER}" "${GIT_CONFIG_DIR}" 2>/dev/null; then
-            chmod -R u+w "${GIT_CONFIG_DIR}"
-            echo_success "Fixed ownership and permissions"
-        else
-            echo_error "Could not fix git config permissions"
-            echo_info "Please run: sudo chown -R ${CURRENT_USER}:${CURRENT_USER} ${GIT_CONFIG_DIR}"
-            exit 1
-        fi
+# Ensure ~/.config exists and is owned by the current user
+if [ -d "${HOME}/.config" ] && [ ! -w "${HOME}/.config" ]; then
+    echo_warning "${HOME}/.config directory not writable, fixing ownership..."
+    sudo chown -R "${CURRENT_USER}:${CURRENT_USER}" "${HOME}/.config"
+fi
+
+# Fix git config directory if it exists
+if [ -d "${GIT_CONFIG_DIR}" ]; then
+    # Check ownership first
+    DIR_OWNER=$(stat -c '%U' "${GIT_CONFIG_DIR}" 2>/dev/null || stat -f '%Su' "${GIT_CONFIG_DIR}" 2>/dev/null || echo "unknown")
+    if [ "${DIR_OWNER}" != "${CURRENT_USER}" ]; then
+        echo_warning "Git config directory owned by ${DIR_OWNER}, fixing..."
+        sudo chown -R "${CURRENT_USER}:${CURRENT_USER}" "${GIT_CONFIG_DIR}"
+        chmod -R u+w "${GIT_CONFIG_DIR}"
+        echo_success "Fixed git config directory ownership"
+    elif [ ! -w "${GIT_CONFIG_DIR}" ]; then
+        echo_warning "Git config directory not writable, fixing permissions..."
+        chmod -R u+w "${GIT_CONFIG_DIR}"
+        echo_success "Fixed git config directory permissions"
     fi
 fi
 
-if [ -f "${GIT_CONFIG_FILE}" ] && [ ! -w "${GIT_CONFIG_FILE}" ]; then
-    echo_warning "Git config file not writable, attempting to fix permissions..."
-    # First try without sudo
-    if chmod u+w "${GIT_CONFIG_FILE}" 2>/dev/null; then
-        echo_success "Fixed file permissions"
-    else
-        # If that fails, try with sudo
-        echo_info "Attempting to fix file ownership (may require sudo password)..."
-        if sudo chown "${CURRENT_USER}:${CURRENT_USER}" "${GIT_CONFIG_FILE}" 2>/dev/null; then
-            chmod u+w "${GIT_CONFIG_FILE}"
-            echo_success "Fixed file ownership and permissions"
-        else
-            echo_error "Could not fix git config file permissions"
-            echo_info "Please run: sudo chown ${CURRENT_USER}:${CURRENT_USER} ${GIT_CONFIG_FILE}"
-            exit 1
-        fi
+# Fix git config file if it exists
+if [ -f "${GIT_CONFIG_FILE}" ]; then
+    # Check ownership first
+    FILE_OWNER=$(stat -c '%U' "${GIT_CONFIG_FILE}" 2>/dev/null || stat -f '%Su' "${GIT_CONFIG_FILE}" 2>/dev/null || echo "unknown")
+    if [ "${FILE_OWNER}" != "${CURRENT_USER}" ]; then
+        echo_warning "Git config file owned by ${FILE_OWNER}, fixing..."
+        sudo chown "${CURRENT_USER}:${CURRENT_USER}" "${GIT_CONFIG_FILE}"
+        chmod u+w "${GIT_CONFIG_FILE}"
+        echo_success "Fixed git config file ownership"
+    elif [ ! -w "${GIT_CONFIG_FILE}" ]; then
+        echo_warning "Git config file not writable, fixing permissions..."
+        chmod u+w "${GIT_CONFIG_FILE}"
+        echo_success "Fixed git config file permissions"
     fi
 fi
 
