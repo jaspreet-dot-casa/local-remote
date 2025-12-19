@@ -12,22 +12,16 @@ echo ""
 echo "Step 1: Running setup..."
 make setup
 
-# Step 2: Configure Git for testing
+# Step 2: Source Nix and run install
 echo ""
-echo "Step 2: Configuring Git..."
-git config --global user.name "Docker Test User"
-git config --global user.email "docker-test@example.com"
-
-# Step 3: Source Nix and run install
-echo ""
-echo "Step 3: Installing packages via Home Manager..."
+echo "Step 2: Installing packages via Home Manager..."
 # shellcheck source=/dev/null
 source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 make install
 
-# Step 4: Verify tools are installed
+# Step 3: Verify tools are installed
 echo ""
-echo "Step 4: Verifying installed tools..."
+echo "Step 3: Verifying installed tools..."
 export PATH=${HOME}/.nix-profile/bin:${PATH}
 
 # Check a subset of critical tools
@@ -60,24 +54,25 @@ for tool in "${tools[@]}"; do
     fi
 done
 
-# Step 5: Verify git configuration
+# Step 4: Verify git configuration (managed by Home Manager)
 echo ""
-echo "Step 5: Verifying git configuration..."
+echo "Step 4: Verifying git configuration..."
 git_name=$(git config --global user.name)
 git_email=$(git config --global user.email)
 
-if [ "${git_name}" = "Docker Test User" ] && [ "${git_email}" = "docker-test@example.com" ]; then
-    echo "  ✓ Git configured correctly: ${git_name} <${git_email}>"
+# Git config is managed by Home Manager via user-config.nix
+# Default values: Jaspreet Singh / 6873201+tagpro@users.noreply.github.com
+if [ -n "${git_name}" ] && [ -n "${git_email}" ]; then
+    echo "  ✓ Git configured: ${git_name} <${git_email}>"
 else
-    echo "  ✗ Git configuration mismatch"
-    echo "    Expected: Docker Test User <docker-test@example.com>"
-    echo "    Got: ${git_name} <${git_email}>"
+    echo "  ✗ Git configuration missing"
+    echo "    Got: name='${git_name}' email='${git_email}'"
     exit 1
 fi
 
-# Step 6: Verify git delta integration
+# Step 5: Verify git delta integration
 echo ""
-echo "Step 6: Verifying git delta integration..."
+echo "Step 5: Verifying git delta integration..."
 pager=$(git config --global core.pager)
 if [ "${pager}" = "delta" ]; then
     echo "  ✓ Git pager set to delta"
@@ -86,9 +81,9 @@ else
     exit 1
 fi
 
-# Step 7: Verify Nix environment
+# Step 6: Verify Nix environment
 echo ""
-echo "Step 7: Verifying Nix environment..."
+echo "Step 6: Verifying Nix environment..."
 nix --version
 home-manager --version
 echo "  ✓ Nix and Home Manager are working"

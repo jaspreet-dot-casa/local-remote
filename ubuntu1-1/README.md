@@ -34,17 +34,17 @@ cd ~/ubuntu1-1
 
 ### 3. Run setup (first time only)
 
-This installs Nix, Docker, Home Manager, and prompts for Git configuration:
+This installs Nix, Docker, and Home Manager:
 
 ```bash
 make setup
 ```
 
-During setup, you'll be prompted to configure your Git identity (name and email).
+Git configuration is managed declaratively via Home Manager (see "Git configuration customization" below).
 
 ### 4. Install packages
 
-This installs zsh, oh-my-zsh, and all tools via Home Manager. If Git wasn't configured during setup, you'll be prompted again:
+This installs zsh, oh-my-zsh, and all tools via Home Manager:
 
 ```bash
 make install
@@ -258,6 +258,17 @@ The generation script uses these defaults if environment variables are not set:
 - **Email:** 6873201+tagpro@users.noreply.github.com
 
 Your Git configuration is managed by Home Manager in `~/.config/git/config` (symlink to Nix store).
+
+**Important:** Because Home Manager creates read-only symlinks to the Nix store, you **cannot** use imperative commands like:
+```bash
+git config --global user.name "..."  # ❌ This will fail with "Permission denied"
+```
+
+Instead, configure Git by:
+1. Setting environment variables before `make install` (temporary)
+2. Editing `user-config.nix.template` (permanent)
+
+This is the Nix/Home Manager way - declarative, reproducible, and version-controlled.
 
 ## Testing
 
