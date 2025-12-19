@@ -138,18 +138,19 @@ Home Manager uses a template-based approach for machine-specific configuration:
    - This file is committed to version control
    - Edit this file to add new configuration options
 
-2. **`home-manager/user-config.nix`** (GITIGNORED, auto-generated)
+2. **`home-manager/user-config.nix`** (TRACKED with defaults, auto-generated)
    - Generated from template with real values
-   - Contains your actual username, home directory, and system info
-   - Never committed (machine-specific)
+   - Contains your actual username, home directory, git config, and system info
+   - Committed with default values (tagpro user, Jaspreet Singh git config)
    - Regenerated automatically before each `make install`
 
 #### How it works:
 
-1. Template contains placeholders: `@USERNAME@`, `@HOME_DIRECTORY@`
+1. Template contains placeholders: `@USERNAME@`, `@HOME_DIRECTORY@`, `@GIT_USER_NAME@`, `@GIT_USER_EMAIL@`
 2. Script detects your system info (username, home dir, architecture, etc.)
-3. Script uses `sed` to replace placeholders with real values
-4. Generated file is used by Home Manager but never committed
+3. Script uses git defaults or environment variables for git config
+4. Script uses `sed` to replace placeholders with real values
+5. Generated file is used by Home Manager (tracked but with real values)
 
 #### Manual regeneration:
 
@@ -168,7 +169,7 @@ make gen-user-config
 
 - **DO edit:** `user-config.nix.template` (to add new options)
 - **DON'T edit:** `user-config.nix` (auto-generated, changes overwritten)
-- **DON'T commit:** `user-config.nix` (already gitignored)
+- **DON'T commit:** local changes to `user-config.nix` (contains your machine-specific values)
 
 
 ## Installed Tools
@@ -215,6 +216,8 @@ When editing `home-manager/user-config.nix.template`, you can use these placehol
 |-------------|---------------|---------|
 | `@USERNAME@` | Current username | `tagpro` |
 | `@HOME_DIRECTORY@` | Home directory path | `/home/tagpro` |
+| `@GIT_USER_NAME@` | Git user name | `Jaspreet Singh` |
+| `@GIT_USER_EMAIL@` | Git user email | `6873201+tagpro@users.noreply.github.com` |
 | `@HOSTNAME@` | Machine hostname | `ubuntu-server-01` |
 | `@NIX_SYSTEM@` | Nix system identifier | `x86_64-linux` |
 | `@ARCH@` | CPU architecture | `x86_64` |
@@ -241,19 +244,20 @@ The generation script automatically replaces these when creating `user-config.ni
 
 ## Git Configuration
 
-Git user name and email are configured interactively during setup:
+Git is configured declaratively through Home Manager via `user-config.nix`:
 
-1. During `make setup`, you'll be prompted for your Git name and email
-2. If you skip it or want to reconfigure later, run:
+1. **Default values** are set in the committed `user-config.nix` file
+2. **Machine-specific values** are generated from `user-config.nix.template`
+3. **Override via environment variables** (optional):
    ```bash
-   ./scripts/configure-git.sh
-   ```
-   or
-   ```bash
-   make install  # Will prompt if not already configured
+   GIT_USER_NAME="Your Name" GIT_USER_EMAIL="you@example.com" make setup
    ```
 
-Your Git configuration is stored in `~/.gitconfig` (global).
+The generation script uses these defaults if environment variables are not set:
+- **Name:** Jaspreet Singh
+- **Email:** 6873201+tagpro@users.noreply.github.com
+
+Your Git configuration is managed by Home Manager in `~/.config/git/config` (symlink to Nix store).
 
 ## Testing
 
@@ -374,11 +378,22 @@ Try:
 home-manager switch --flake ./home-manager#ubuntu --refresh
 ```
 
-### Git configuration not set
+### Git configuration customization
 
-To configure or reconfigure Git:
+Git is configured via Home Manager in `user-config.nix`. To customize:
+
+**Option 1: Environment variables (one-time)**
 ```bash
-./scripts/configure-git.sh
+GIT_USER_NAME="Your Name" GIT_USER_EMAIL="you@email.com" make install
+```
+
+**Option 2: Edit the template (permanent)**
+```bash
+# Edit user-config.nix.template to change defaults
+vim home-manager/user-config.nix.template
+# Then regenerate
+make gen-user-config
+make install
 ```
 
 ## File Structure
@@ -391,7 +406,7 @@ ubuntu1-1/
 │   └── config/                # Tool configurations
 ├── scripts/
 │   ├── setup.sh               # Setup script
-│   ├── configure-git.sh       # Git configuration (interactive)
+│   ├── generate-user-config.sh # Generate user config from template
 │   ├── post-install.sh        # Shell change script
 │   ├── verify-env.sh          # Verification script
 │   ├── test-docker.sh         # Docker test runner

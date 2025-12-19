@@ -161,10 +161,8 @@ else
     echo_success "Home Manager installed successfully"
 fi
 
-# 7. Configure Git
-echo ""
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-bash "${SCRIPT_DIR}/configure-git.sh"
+# 7. Git configuration is now managed by Home Manager via user-config.nix
+# No separate configure-git.sh script needed
 
 # Done!
 echo ""

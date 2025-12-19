@@ -34,9 +34,6 @@ install: gen-user-config
 	CURRENT_USER=$${USER:-$$(whoami)}; \
 	echo "Detected: arch=$$ARCH, user=$$CURRENT_USER, config=$$FLAKE_CONFIG"; \
 	home-manager switch --flake $(ROOT)home-manager#$$FLAKE_CONFIG
-	@echo ""
-	@echo "Configuring git (interactive if not set)..."
-	@bash $(ROOT)scripts/configure-git.sh
 
 zsh:
 	@echo "Changing default shell to zsh..."
@@ -56,7 +53,6 @@ test-syntax:
 	@echo "Checking bash scripts..."
 	@bash -n $(ROOT)scripts/setup.sh && echo "  ✓ setup.sh"
 	@bash -n $(ROOT)scripts/generate-user-config.sh && echo "  ✓ generate-user-config.sh"
-	@bash -n $(ROOT)scripts/configure-git.sh && echo "  ✓ configure-git.sh"
 	@bash -n $(ROOT)scripts/post-install.sh && echo "  ✓ post-install.sh"
 	@bash -n $(ROOT)scripts/test-docker.sh && echo "  ✓ test-docker.sh"
 	@bash -n $(ROOT)scripts/test-in-docker.sh && echo "  ✓ test-in-docker.sh"

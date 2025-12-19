@@ -9,6 +9,8 @@
 # Template placeholders (replaced by generate-user-config.sh):
 #   @USERNAME@        - Replaced with actual username (e.g., "tagpro")
 #   @HOME_DIRECTORY@  - Replaced with actual home directory (e.g., "/home/tagpro")
+#   @GIT_USER_NAME@   - Replaced with git user name (e.g., "Jaspreet Singh")
+#   @GIT_USER_EMAIL@  - Replaced with git user email (e.g., "user@example.com")
 #   @HOSTNAME@        - Replaced with actual hostname
 #   @NIX_SYSTEM@      - Replaced with nix system identifier (x86_64-linux, aarch64-linux)
 #   @ARCH@            - Replaced with architecture (x86_64, arm64)
@@ -33,4 +35,10 @@
   # User configuration
   home.username = "@USERNAME@";
   home.homeDirectory = "@HOME_DIRECTORY@";
+  
+  # Git configuration
+  programs.git = {
+    userName = "@GIT_USER_NAME@";
+    userEmail = "@GIT_USER_EMAIL@";
+  };
 }

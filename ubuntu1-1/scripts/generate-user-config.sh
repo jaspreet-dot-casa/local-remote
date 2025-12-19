@@ -36,6 +36,18 @@ ARCH=$(uname -m)
 HOSTNAME=$(hostname)
 KERNEL=$(uname -r)
 
+# Detect or prompt for Git configuration
+# Try environment variables first, fall back to defaults if not set
+if [ -n "${GIT_USER_NAME:-}" ] && [ -n "${GIT_USER_EMAIL:-}" ]; then
+    # Environment variables provided
+    GIT_NAME="${GIT_USER_NAME}"
+    GIT_EMAIL="${GIT_USER_EMAIL}"
+else
+    # Use defaults (can be overridden with environment variables)
+    GIT_NAME="${GIT_USER_NAME:-Jaspreet Singh}"
+    GIT_EMAIL="${GIT_USER_EMAIL:-6873201+tagpro@users.noreply.github.com}"
+fi
+
 # Detect OS information
 if [ -f /etc/os-release ]; then
     # shellcheck disable=SC1091
@@ -94,6 +106,8 @@ fi
 # Escape all variables for safe sed substitution
 SAFE_USER=$(escape_sed "${CURRENT_USER}")
 SAFE_HOME=$(escape_sed "${HOME_DIR}")
+SAFE_GIT_NAME=$(escape_sed "${GIT_NAME}")
+SAFE_GIT_EMAIL=$(escape_sed "${GIT_EMAIL}")
 SAFE_HOSTNAME=$(escape_sed "${HOSTNAME}")
 SAFE_NIX_SYSTEM=$(escape_sed "${NIX_SYSTEM}")
 SAFE_ARCH=$(escape_sed "${ARCH}")
@@ -104,6 +118,8 @@ SAFE_DATE=$(escape_sed "$(date -u +"%Y-%m-%d %H:%M:%S UTC")")
 # Generate user-config.nix from template using sed with escaped variables
 sed -e "s|@USERNAME@|${SAFE_USER}|g" \
     -e "s|@HOME_DIRECTORY@|${SAFE_HOME}|g" \
+    -e "s|@GIT_USER_NAME@|${SAFE_GIT_NAME}|g" \
+    -e "s|@GIT_USER_EMAIL@|${SAFE_GIT_EMAIL}|g" \
     -e "s|@HOSTNAME@|${SAFE_HOSTNAME}|g" \
     -e "s|@NIX_SYSTEM@|${SAFE_NIX_SYSTEM}|g" \
     -e "s|@ARCH@|${SAFE_ARCH}|g" \
