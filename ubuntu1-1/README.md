@@ -9,6 +9,7 @@ Declarative configuration for remote Ubuntu server using Nix and Home Manager.
 - 📦 **Nix-managed packages** - git, gh, lazygit, docker tools, zellij, tmux, neovim, and more
 - 🐚 **Modern shell** - Zsh + Oh-My-Zsh + Starship prompt
 - 🛠️ **Developer tools** - ripgrep, fd, bat, fzf, zoxide, delta, btop, and more
+- 🔐 **Tailscale VPN + SSH** - Secure remote access with built-in 2FA and exit node support
 
 ## Prerequisites
 
@@ -42,23 +43,27 @@ make setup
 
 Git configuration is managed declaratively via Home Manager (see "Git configuration customization" below).
 
-### 4. Install packages
+### 4. Install packages and configure system
 
-This installs zsh, oh-my-zsh, and all tools via Home Manager:
+This installs all tools via Home Manager and runs post-install configuration (shell + Tailscale):
 
 ```bash
 make install
 ```
 
-### 5. Change default shell
+This will:
+- Install all Nix packages (git, docker tools, zsh, neovim, etc.)
+- Configure zsh as default shell
+- Set up Tailscale VPN and SSH (interactive)
 
-To use zsh:
-
+**Automation flag:** To skip confirmation prompts (useful for automation):
 ```bash
-make zsh
+make install  # Will prompt for Tailscale auth
+# OR
+make post-install ARGS="-y"  # Skip confirmations (after packages installed)
 ```
 
-### 6. Log out and back in
+### 5. Log out and back in
 
 For docker group and shell changes to take effect:
 
@@ -66,6 +71,21 @@ For docker group and shell changes to take effect:
 exit
 # SSH back in
 ```
+
+### 6. Configure Tailscale (post-installation)
+
+After installation, configure Tailscale in the admin console:
+
+1. **Enable SSH access** (required for Tailscale SSH):
+   - Go to https://login.tailscale.com/admin/acls
+   - Add SSH ACL rules (see "Tailscale SSH Configuration" section below)
+
+2. **Enable exit node** (optional):
+   - Go to https://login.tailscale.com/admin/machines
+   - Click your machine → Edit route settings
+   - Enable "Use as exit node"
+
+See the "Network Services - Tailscale" section below for detailed configuration.
 
 ### 7. Verify installation
 
@@ -124,8 +144,11 @@ This file is sourced automatically and not managed by Home Manager.
 - **Tmux**: Edit `home-manager/home.nix` → `programs.tmux`
 - **Neovim**: Edit `home-manager/home.nix` → `programs.neovim`
 - **Zellij**: Edit `home-manager/home.nix` → `xdg.configFile."zellij/config.kdl"`
+- **Tailscale**: Edit `home-manager/config/tailscale.conf`
 
-After editing, run `make install` to apply changes.
+After editing, run:
+- `make install` for package/config changes
+- `make post-install` for Tailscale configuration changes
 
 ### Machine-Specific Configuration
 
@@ -208,6 +231,171 @@ make gen-user-config
 - **dig/nslookup** - DNS utilities
 - **htpasswd** - Password file utility
 
+### Network & Remote Access
+- **tailscale** - VPN mesh network with SSH support and exit node capability
+
+## Network Services
+
+### Tailscale VPN + SSH
+
+This setup includes **Tailscale SSH only** - no traditional OpenSSH server is installed or configured.
+
+#### Features
+
+- ✅ **Tailscale SSH with built-in 2FA** - Uses identity provider MFA via "check mode"
+- ✅ **Exit node advertising** - Route traffic through this server
+- ✅ **No SSH key management** - WireGuard authentication
+- ✅ **Centralized access control** - Manage via Tailscale ACLs
+- ✅ **Automatic setup** - Post-install script handles everything
+- ✅ **Declarative configuration** - Settings in `home-manager/config/tailscale.conf`
+
+#### Quick Start
+
+Tailscale is automatically set up during `make install`. To reconfigure:
+
+```bash
+make post-install  # Interactive
+make post-install ARGS="-y"  # Non-interactive
+```
+
+#### Configuration
+
+Edit `home-manager/config/tailscale.conf`:
+
+```bash
+# Enable Tailscale SSH (replaces traditional OpenSSH)
+TAILSCALE_SSH_ENABLED=true
+
+# Advertise as exit node
+TAILSCALE_ADVERTISE_EXIT_NODE=true
+
+# SSH Check Mode (2FA via identity provider)
+TAILSCALE_SSH_CHECK_MODE=true
+
+# Check period for re-authentication
+TAILSCALE_SSH_CHECK_PERIOD="12h"
+
+# Additional flags (space-separated)
+TAILSCALE_ADDITIONAL_FLAGS=""
+```
+
+After editing, run:
+```bash
+make post-install
+```
+
+#### Tailscale SSH Configuration
+
+**Tailscale SSH requires ACL configuration in the admin console.**
+
+1. Go to https://login.tailscale.com/admin/acls
+
+2. Add SSH rules to your ACL policy:
+
+```json
+{
+  "ssh": [
+    {
+      "action": "check",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot", "root"],
+      "checkPeriod": "12h"
+    }
+  ]
+}
+```
+
+**What this does:**
+- `"action": "check"` - Enables 2FA via identity provider
+- `"src": ["autogroup:member"]` - All Tailscale users
+- `"dst": ["autogroup:self"]` - Can SSH to their own devices
+- `"users": ["autogroup:nonroot", "root"]` - Can become any non-root user or root
+- `"checkPeriod": "12h"` - Re-authenticate every 12 hours
+
+3. Save the ACL policy
+
+4. SSH to your server from another Tailscale device:
+
+```bash
+# From another machine on your Tailscale network
+ssh username@machine-name
+# Or using Tailscale IP
+ssh username@100.x.y.z
+```
+
+**Benefits of check mode (2FA):**
+- Requires MFA via your identity provider (Google, GitHub, etc.)
+- Configurable check period (5m, 1h, 12h, always)
+- No additional TOTP apps needed
+- Centrally managed, easy to revoke access
+
+#### Exit Node Setup
+
+Your server advertises as an exit node but needs approval.
+
+1. Go to https://login.tailscale.com/admin/machines
+
+2. Find your machine in the list
+
+3. Click on the machine → **Edit route settings**
+
+4. Enable **"Use as exit node"**
+
+5. From another Tailscale device, route traffic through this server:
+
+```bash
+tailscale up --exit-node=machine-name
+# Or using Tailscale IP
+tailscale up --exit-node=100.x.y.z
+```
+
+6. Verify exit node is active:
+
+```bash
+tailscale status
+curl ifconfig.me  # Should show your server's public IP
+```
+
+#### Useful Commands
+
+```bash
+# Check Tailscale status
+tailscale status
+
+# Show Tailscale IPs
+tailscale ip
+
+# Ping another Tailscale machine
+tailscale ping machine-name
+
+# SSH to another Tailscale machine
+ssh username@machine-name
+
+# Enable exit node on client
+tailscale up --exit-node=server-name
+
+# Disable exit node on client
+tailscale up --exit-node=
+```
+
+#### Why Tailscale SSH Only?
+
+**Advantages:**
+- ✅ Built-in 2FA via check mode
+- ✅ No SSH key management
+- ✅ Centralized access control (Tailscale ACLs)
+- ✅ WireGuard encryption + SSH protocol
+- ✅ Automatic key rotation
+- ✅ Session recording available
+- ✅ Simpler architecture (one SSH solution)
+
+**Trade-offs:**
+- ⚠️ Only works from Tailscale network
+- ⚠️ Requires Tailscale ACL configuration
+
+**Important:** If you need traditional SSH access, you'll need to install and configure `openssh-server` separately. This setup intentionally does not include it.
+
 ## Template Placeholders
 
 When editing `home-manager/user-config.nix.template`, you can use these placeholders:
@@ -232,8 +420,10 @@ The generation script automatically replaces these when creating `user-config.ni
 ### Setup & Installation
 - `make help` - Show all available targets
 - `make setup` - First-time setup (Nix, Docker, Home Manager)
-- `make install` - Install/update packages via Home Manager
-- `make zsh` - Change default shell to zsh
+- `make install` - **Full installation: packages + post-install (MAIN TARGET)**
+- `make install-nix-pkgs` - Install/update packages via Home Manager only
+- `make post-install` - Run post-install configuration (shell + Tailscale, supports `ARGS="-y"`)
+- `make zsh` - Alias for post-install (backward compatibility)
 - `make verify` - Verify installation on current system
 
 ### Testing & Validation
@@ -407,26 +597,96 @@ make gen-user-config
 make install
 ```
 
+### Tailscale not authenticating
+
+If Tailscale setup fails or you need to re-authenticate:
+
+```bash
+# Check daemon status
+sudo systemctl status tailscaled
+
+# Check logs
+sudo journalctl -u tailscaled -n 50
+
+# Re-run setup
+make post-install
+
+# Or manually authenticate
+sudo tailscale up --ssh --advertise-exit-node
+```
+
+### Tailscale SSH not working
+
+1. **Verify Tailscale connection:**
+   ```bash
+   tailscale status  # Should show connected
+   ```
+
+2. **Check ACLs are configured:**
+   - Go to https://login.tailscale.com/admin/acls
+   - Ensure SSH rules are present (see "Tailscale SSH Configuration" above)
+
+3. **Verify SSH is enabled:**
+   ```bash
+   tailscale status | grep "SSH enabled"
+   ```
+
+4. **Try direct SSH:**
+   ```bash
+   # Get Tailscale IP
+   tailscale ip -4
+   
+   # SSH from another Tailscale device
+   ssh username@<tailscale-ip>
+   ```
+
+5. **Check Tailscale SSH logs:**
+   ```bash
+   sudo journalctl -u tailscaled | grep -i ssh
+   ```
+
+### Exit node not available
+
+1. **Verify exit node is advertised:**
+   ```bash
+   tailscale status  # Look for "Exit node" line
+   ```
+
+2. **Enable in admin console:**
+   - Go to https://login.tailscale.com/admin/machines
+   - Click your machine
+   - Edit route settings
+   - Enable "Use as exit node"
+
+3. **Re-advertise if needed:**
+   ```bash
+   sudo tailscale up --ssh --advertise-exit-node
+   ```
+
 ## File Structure
 
 ```
 ubuntu1-1/
 ├── home-manager/
-│   ├── flake.nix              # Nix flake configuration
-│   ├── home.nix               # Home Manager configuration
-│   └── config/                # Tool configurations
+│   ├── flake.nix                        # Nix flake configuration
+│   ├── home.nix                         # Home Manager configuration
+│   ├── config/
+│   │   └── tailscale.conf              # Tailscale configuration
+│   └── scripts/
+│       └── tailscale/
+│           └── post-install.sh         # Tailscale setup script
 ├── scripts/
-│   ├── setup.sh               # Setup script
-│   ├── generate-user-config.sh # Generate user config from template
-│   ├── post-install.sh        # Shell change script
-│   ├── verify-env.sh          # Verification script
-│   ├── test-docker.sh         # Docker test runner
-│   └── test-in-docker.sh      # Container tests
-├── .dockerignore              # Docker build exclusions
-├── .shellcheckrc              # ShellCheck configuration
-├── Dockerfile.test            # Docker test container
-├── Makefile                   # Automation targets
-└── README.md                  # This file
+│   ├── setup.sh                         # Setup script
+│   ├── generate-user-config.sh          # Generate user config from template
+│   ├── post-install.sh                  # Post-install orchestrator (shell + Tailscale)
+│   ├── verify-env.sh                    # Verification script
+│   ├── test-docker.sh                   # Docker test runner
+│   └── test-in-docker.sh                # Container tests
+├── .dockerignore                        # Docker build exclusions
+├── .shellcheckrc                        # ShellCheck configuration
+├── Dockerfile.test                      # Docker test container
+├── Makefile                             # Automation targets
+└── README.md                            # This file
 
 GitHub Actions workflow (in parent repo):
 ../.github/workflows/verify-ubuntu1-1.yml
