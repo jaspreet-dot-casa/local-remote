@@ -57,7 +57,7 @@ log_info()    { echo -e "${BLUE}→ $1${NC}"; }
 log_success() { echo -e "${GREEN}✓ $1${NC}"; }
 log_warning() { echo -e "${YELLOW}⚠ $1${NC}"; }
 log_error()   { echo -e "${RED}✗ $1${NC}" >&2; }
-log_debug()   { [[ "$VERBOSE" == "true" ]] && echo -e "${MAGENTA}[DEBUG] $1${NC}"; }
+log_debug()   { [[ "$VERBOSE" == "true" ]] && echo -e "${MAGENTA}[DEBUG] $1${NC}" || true; }
 
 log_section() {
     echo ""

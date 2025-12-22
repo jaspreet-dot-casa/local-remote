@@ -35,12 +35,12 @@ help:
 
 setup:
 	@echo "Running setup script..."
-	@bash $(ROOT)scripts/setup.sh
+	bash $(ROOT)scripts/setup.sh
 
 # Install Nix packages only (no system changes)
 install-nix-pkgs: gen-user-config
 	@echo "Installing packages via Home Manager..."
-	@FLAKE_CONFIG=$$(bash $(ROOT)scripts/generate-user-config.sh); \
+	FLAKE_CONFIG=$$(bash $(ROOT)scripts/generate-user-config.sh); \
 	ARCH=$$(uname -m); \
 	CURRENT_USER=$${USER:-$$(whoami)}; \
 	echo "Detected: arch=$$ARCH, user=$$CURRENT_USER, config=$$FLAKE_CONFIG"; \
@@ -49,7 +49,7 @@ install-nix-pkgs: gen-user-config
 # Run post-install configuration (system-level setup)
 post-install:
 	@echo "Running post-install configuration..."
-	@bash $(ROOT)scripts/post-install.sh $(ARGS)
+	bash $(ROOT)scripts/post-install.sh $(ARGS)
 
 # Full installation: packages + post-install (MAIN TARGET)
 install: install-nix-pkgs post-install
@@ -61,12 +61,12 @@ zsh: post-install
 
 verify:
 	@echo "Verifying installation..."
-	@bash $(ROOT)scripts/verify-env.sh
+	bash $(ROOT)scripts/verify-env.sh
 
 # Testing targets
 test-docker:
 	@echo "Running Docker-based integration test..."
-	@bash $(ROOT)scripts/test-docker.sh
+	bash $(ROOT)scripts/test-docker.sh
 
 test-syntax:
 	@echo "Checking script syntax..."
@@ -109,7 +109,7 @@ nix-check: gen-user-config
 
 # Update all packages idempotently (for cloud-init systems)
 update:
-	@if [ -f $(ROOT)scripts/cloud-init/update-all.sh ]; then \
+	if [ -f $(ROOT)scripts/cloud-init/update-all.sh ]; then \
 		bash $(ROOT)scripts/cloud-init/update-all.sh; \
 	else \
 		echo "Cloud-init scripts not yet implemented"; \
@@ -118,7 +118,7 @@ update:
 
 # Dry-run mode - preview changes without applying
 update-dry:
-	@if [ -f $(ROOT)scripts/cloud-init/update-all.sh ]; then \
+	if [ -f $(ROOT)scripts/cloud-init/update-all.sh ]; then \
 		DRY_RUN=true bash $(ROOT)scripts/cloud-init/update-all.sh; \
 	else \
 		echo "Cloud-init scripts not yet implemented"; \
@@ -126,7 +126,7 @@ update-dry:
 
 # Verify cloud-init installation
 verify-cloud:
-	@if [ -f $(ROOT)scripts/cloud-init/update-all.sh ]; then \
+	if [ -f $(ROOT)scripts/cloud-init/update-all.sh ]; then \
 		bash $(ROOT)scripts/cloud-init/update-all.sh --verify-only; \
 	else \
 		echo "Cloud-init scripts not yet implemented"; \
@@ -139,16 +139,16 @@ verify-cloud:
 # Run full cloud-init test in Multipass VM
 test-multipass:
 	@echo "Running cloud-init integration test in Multipass VM..."
-	@bash $(ROOT)tests/multipass/run-test.sh
+	bash $(ROOT)tests/multipass/run-test.sh
 
 # Run test but keep VM for debugging
 test-multipass-keep:
 	@echo "Running cloud-init test (keeping VM for debugging)..."
-	@bash $(ROOT)tests/multipass/run-test.sh --keep
+	bash $(ROOT)tests/multipass/run-test.sh --keep
 
 # Clean up any leftover test VMs
 test-multipass-clean:
 	@echo "Cleaning up test VMs..."
-	@multipass list --format csv 2>/dev/null | grep cloud-init-test | cut -d',' -f1 | xargs -I {} multipass delete {} 2>/dev/null || true
-	@multipass purge 2>/dev/null || true
+	multipass list --format csv 2>/dev/null | grep cloud-init-test | cut -d',' -f1 | xargs -I {} multipass delete {} 2>/dev/null || true
+	multipass purge 2>/dev/null || true
 	@echo "Cleanup complete"
