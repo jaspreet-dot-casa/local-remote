@@ -75,9 +75,9 @@ create_backup() {
     done
 
     if [[ $backed_up -eq 0 ]]; then
-        log_debug "No files to backup"
+        log_debug "No files to backup (first install)"
         rmdir "$backup_dir" 2>/dev/null
-        return 1
+        return 0  # Not an error - just nothing to backup
     fi
 
     # Create manifest
@@ -261,12 +261,12 @@ diff_backup() {
 # Usage: backup_before_changes
 backup_before_changes() {
     local last_backup
-    last_backup=$(get_latest_backup)
+    last_backup=$(get_latest_backup) || true
 
     # If no backup exists, create one
     if [[ -z "$last_backup" ]]; then
         create_backup
-        return $?
+        return 0
     fi
 
     # If last backup is less than 1 hour old, skip
