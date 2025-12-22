@@ -123,6 +123,24 @@ write_files:
     content: |
       ${TAILSCALE_AUTH_KEY}
 
+  # Tailscale authentication script
+  - path: /opt/local-remote/setup-tailscale.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Authenticate Tailscale if auth key is provided
+      set -e
+      AUTH_KEY_FILE="/home/${USERNAME}/.local-remote/tailscale-auth-key"
+      AUTH_KEY=$(cat "$AUTH_KEY_FILE" 2>/dev/null | tr -d '[:space:]')
+      if [[ -n "$AUTH_KEY" && "$AUTH_KEY" != '${TAILSCALE_AUTH_KEY}' ]]; then
+        echo "Authenticating Tailscale with provided auth key..."
+        tailscale up --ssh --advertise-exit-node --authkey="$AUTH_KEY"
+        rm -f "$AUTH_KEY_FILE"
+        echo "Tailscale authenticated successfully"
+      else
+        echo "No Tailscale auth key provided, skipping authentication"
+      fi
+
   # In-VM verification test script
   # This script runs after cloud-init completes to verify the installation
   - path: /opt/local-remote/test-in-vm.sh
@@ -256,13 +274,11 @@ runcmd:
     systemctl start tailscaled
 
   # Authenticate Tailscale (if auth key provided)
-  - |
-    #!/bin/bash
-    AUTH_KEY=$(cat /home/${USERNAME}/.local-remote/tailscale-auth-key 2>/dev/null | tr -d '[:space:]')
-    if [[ -n "$AUTH_KEY" && "$AUTH_KEY" != '${TAILSCALE_AUTH_KEY}' ]]; then
-      tailscale up --ssh --advertise-exit-node --authkey="$AUTH_KEY"
-      rm -f /home/${USERNAME}/.local-remote/tailscale-auth-key
-    fi
+  - bash /opt/local-remote/setup-tailscale.sh
+
+  # Fix ownership of user directories created by cloud-init
+  - mkdir -p /home/${USERNAME}/.local-remote/logs /home/${USERNAME}/.config
+  - chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.local-remote /home/${USERNAME}/.config
 
   # Run bootstrap script
   - /opt/local-remote/bootstrap.sh
@@ -271,12 +287,7 @@ runcmd:
   - rm -f /home/${USERNAME}/.local-remote/tailscale-auth-key
 
   # Run verification tests (for automated testing)
-  - |
-    #!/bin/bash
-    if [[ -f /opt/local-remote/test-in-vm.sh ]]; then
-      echo "=== Running verification tests ==="
-      sudo -u ${USERNAME} /opt/local-remote/test-in-vm.sh || true
-    fi
+  - bash -c 'if [ -f /opt/local-remote/test-in-vm.sh ]; then echo "=== Running verification tests ==="; sudo -u ${USERNAME} /opt/local-remote/test-in-vm.sh || true; fi'
 
 # =============================================================================
 # Final Message
