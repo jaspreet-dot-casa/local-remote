@@ -97,10 +97,10 @@ write_files:
 
       echo "=== Bootstrap Complete ==="
 
-  # Config file
+  # Config file (created in final stage after user exists)
   - path: /home/${USERNAME}/.local-remote/config.env
     permissions: '0600'
-    owner: ${USERNAME}:${USERNAME}
+    defer: true
     content: |
       # Cloud-init generated configuration
       USER_NAME="${USER_NAME}"
@@ -116,10 +116,10 @@ write_files:
       TAILSCALE_EXIT_NODE_ADVERTISE=true
       TAILSCALE_SSH_CHECK_PERIOD="12h"
 
-  # Tailscale auth key (if provided)
+  # Tailscale auth key (if provided, created in final stage after user exists)
   - path: /home/${USERNAME}/.local-remote/tailscale-auth-key
     permissions: '0600'
-    owner: ${USERNAME}:${USERNAME}
+    defer: true
     content: |
       ${TAILSCALE_AUTH_KEY}
 
