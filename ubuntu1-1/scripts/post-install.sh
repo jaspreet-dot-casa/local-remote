@@ -50,13 +50,18 @@ fi
 
 # Tailscale Setup
 echo_section "Setting up Tailscale..."
-TAILSCALE_SCRIPT="${PROJECT_ROOT}/home-manager/scripts/tailscale/post-install.sh"
+# Try new location first (scripts/shared/), fallback to old location for compatibility
+TAILSCALE_SCRIPT="${PROJECT_ROOT}/scripts/shared/tailscale.sh"
+if [ ! -f "${TAILSCALE_SCRIPT}" ]; then
+    # Fallback to old location
+    TAILSCALE_SCRIPT="${PROJECT_ROOT}/home-manager/scripts/tailscale/post-install.sh"
+fi
 if [ -f "${TAILSCALE_SCRIPT}" ]; then
     # shellcheck source=/dev/null
     # shellcheck disable=SC2086
     bash "${TAILSCALE_SCRIPT}" ${ARGS}
 else
-    echo_info "Tailscale post-install script not found - skipping"
+    echo_info "Tailscale script not found - skipping"
 fi
 
 # Final summary
