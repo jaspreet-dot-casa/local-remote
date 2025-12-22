@@ -29,19 +29,19 @@ NC='\033[0m' # No Color
 #==============================================================================
 
 log_info() {
-    echo -e "${BLUE}${BOLD}${NC}" >&2
+    echo -e "${BLUE}→ $1${NC}" >&2
 }
 
 log_success() {
-    echo -e "${GREEN}${BOLD}${NC}" >&2
+    echo -e "${GREEN}✓ $1${NC}" >&2
 }
 
 log_warning() {
-    echo -e "${YELLOW}${BOLD}$1${NC}" >&2
+    echo -e "${YELLOW}⚠ $1${NC}" >&2
 }
 
 log_error() {
-    echo -e "${RED}${BOLD}$1${NC}" >&2
+    echo -e "${RED}✗ $1${NC}" >&2
 }
 
 log_debug() {
