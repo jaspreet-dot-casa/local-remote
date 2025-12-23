@@ -149,6 +149,10 @@ write_files:
       #!/bin/bash
       # In-VM Verification Script - runs after cloud-init to test installation
       set -u
+
+      # Ensure ~/.local/bin is in PATH (for starship, zoxide, etc.)
+      [[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
+
       RESULTS_FILE="/tmp/test-results.json"
       MARKER_FILE="/tmp/cloud-init-test-complete"
       declare -a TESTS
