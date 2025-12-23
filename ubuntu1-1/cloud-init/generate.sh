@@ -112,6 +112,7 @@ generate_yaml() {
     # Set defaults for optional values
     TAILSCALE_AUTH_KEY="${TAILSCALE_AUTH_KEY:-}"
     GITHUB_PAT="${GITHUB_PAT:-}"
+    GITHUB_USER="${GITHUB_USER:-}"
     REPO_URL="${REPO_URL:-https://github.com/tagpro/local-remote.git}"
     REPO_BRANCH="${REPO_BRANCH:-main}"
 
@@ -119,7 +120,7 @@ generate_yaml() {
 
     # Only substitute these specific template variables
     # This prevents envsubst from replacing local shell variables in embedded scripts
-    local TEMPLATE_VARS='$USERNAME $HOSTNAME $SSH_PUBLIC_KEY $USER_NAME $USER_EMAIL $REPO_URL $REPO_BRANCH $TAILSCALE_AUTH_KEY $GITHUB_PAT'
+    local TEMPLATE_VARS='$USERNAME $HOSTNAME $SSH_PUBLIC_KEY $USER_NAME $USER_EMAIL $REPO_URL $REPO_BRANCH $TAILSCALE_AUTH_KEY $GITHUB_PAT $GITHUB_USER'
 
     # Generate output
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
@@ -143,7 +144,7 @@ validate_yaml() {
 
     # Check for unsubstituted template variables (only our known template vars)
     # Don't flag bash variables like ${BLUE}, ${NC}, etc.
-    local template_vars='USERNAME|HOSTNAME|SSH_PUBLIC_KEY|USER_NAME|USER_EMAIL|REPO_URL|REPO_BRANCH|TAILSCALE_AUTH_KEY|GITHUB_PAT'
+    local template_vars='USERNAME|HOSTNAME|SSH_PUBLIC_KEY|USER_NAME|USER_EMAIL|REPO_URL|REPO_BRANCH|TAILSCALE_AUTH_KEY|GITHUB_PAT|GITHUB_USER'
     if grep -qE "\\\$\{($template_vars)\}" "$file"; then
         log_warning "Found unsubstituted template variables in output:"
         grep -oE "\\\$\{($template_vars)\}" "$file" | sort -u | while read -r var; do
