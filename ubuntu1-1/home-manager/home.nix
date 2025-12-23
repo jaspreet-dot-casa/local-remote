@@ -43,6 +43,9 @@
     bind     # Provides dig, nslookup (dnsutils)
     apacheHttpd  # Provides htpasswd, ab
 
+    # Network & Remote Access
+    tailscale    # VPN mesh network + SSH (daemon setup via post-install)
+
     # Prompt
     starship
   ];
