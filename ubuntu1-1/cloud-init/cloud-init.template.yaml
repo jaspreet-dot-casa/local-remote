@@ -292,18 +292,18 @@ runcmd:
   # Import SSH authorized keys from GitHub (if GITHUB_USER is provided)
   - |
     GITHUB_USER="${GITHUB_USER}"
-    if [[ -n "$GITHUB_USER" ]]; then
+    if [ -n "$GITHUB_USER" ]; then
       echo "Importing SSH keys from GitHub user: $GITHUB_USER"
       AUTH_KEYS_FILE="/home/${USERNAME}/.ssh/authorized_keys"
       mkdir -p "/home/${USERNAME}/.ssh"
       GITHUB_KEYS=$(curl -fsSL "https://github.com/$GITHUB_USER.keys" 2>/dev/null || echo "")
-      if [[ -n "$GITHUB_KEYS" ]]; then
-        while IFS= read -r key; do
-          if [[ -n "$key" ]] && ! grep -qF "$key" "$AUTH_KEYS_FILE" 2>/dev/null; then
+      if [ -n "$GITHUB_KEYS" ]; then
+        echo "$GITHUB_KEYS" | while IFS= read -r key; do
+          if [ -n "$key" ] && ! grep -qF "$key" "$AUTH_KEYS_FILE" 2>/dev/null; then
             echo "$key" >> "$AUTH_KEYS_FILE"
-            echo "Added key: ${key:0:50}..."
+            echo "Added key from GitHub"
           fi
-        done <<< "$GITHUB_KEYS"
+        done
         chmod 600 "$AUTH_KEYS_FILE"
         chown ${USERNAME}:${USERNAME} "$AUTH_KEYS_FILE"
         chown ${USERNAME}:${USERNAME} "/home/${USERNAME}/.ssh"
