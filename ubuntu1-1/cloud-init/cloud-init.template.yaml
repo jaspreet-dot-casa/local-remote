@@ -61,7 +61,7 @@ packages:
 write_files:
   # Clone script - downloads and runs the setup
   - path: /opt/local-remote/bootstrap.sh
-    permissions: '0755'
+    permissions: "755"
     content: |
       #!/bin/bash
       set -e
@@ -99,7 +99,7 @@ write_files:
 
   # Config file (created in final stage after user exists)
   - path: /home/${USERNAME}/.local-remote/config.env
-    permissions: '0600'
+    permissions: "600"
     defer: true
     content: |
       # Cloud-init generated configuration
@@ -118,14 +118,14 @@ write_files:
 
   # Tailscale auth key (if provided, created in final stage after user exists)
   - path: /home/${USERNAME}/.local-remote/tailscale-auth-key
-    permissions: '0600'
+    permissions: "600"
     defer: true
     content: |
       ${TAILSCALE_AUTH_KEY}
 
   # Tailscale authentication script
   - path: /opt/local-remote/setup-tailscale.sh
-    permissions: '0755'
+    permissions: "755"
     content: |
       #!/bin/bash
       # Authenticate Tailscale if auth key is provided
@@ -144,7 +144,7 @@ write_files:
   # In-VM verification test script
   # This script runs after cloud-init completes to verify the installation
   - path: /opt/local-remote/test-in-vm.sh
-    permissions: '0755'
+    permissions: "755"
     content: |
       #!/bin/bash
       # In-VM Verification Script - runs after cloud-init to test installation
