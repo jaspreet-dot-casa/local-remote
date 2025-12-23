@@ -3,7 +3,9 @@
 # Starship Installer
 #
 # The minimal, blazing-fast, and infinitely customizable prompt
-# https://github.com/starship/starship
+# https://starship.rs
+#
+# Uses official installer: curl -sS https://starship.rs/install.sh | sh
 #
 # Usage: ./starship.sh [install|update|verify|version]
 #==============================================================================
@@ -16,14 +18,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 source "${SCRIPT_DIR}/../lib/core.sh"
-source "${SCRIPT_DIR}/../lib/version.sh"
-source "${SCRIPT_DIR}/../lib/lock.sh"
 source "${SCRIPT_DIR}/../lib/health.sh"
 source "${SCRIPT_DIR}/../lib/dryrun.sh"
 
 PACKAGE_NAME="starship"
-GITHUB_REPO="starship/starship"
-INSTALL_PATH="/usr/local/bin/starship"
 
 is_installed() { command_exists starship; }
 
@@ -33,33 +31,17 @@ get_installed_version() {
     fi
 }
 
-get_desired_version() {
-    [[ -f "${PROJECT_ROOT}/config.env" ]] && source "${PROJECT_ROOT}/config.env"
-    local version="${PACKAGE_STARSHIP_VERSION:-latest}"
-    [[ "$version" == "latest" ]] && resolve_version "latest" "$GITHUB_REPO" || echo "$version"
-}
-
 do_install() {
-    local version="$1"
-    local arch=$(get_github_arch)
+    log_info "Installing starship via official installer..."
 
-    log_info "Installing starship v${version}..."
-
-    # Starship uses different naming
-    local url="https://github.com/${GITHUB_REPO}/releases/download/v${version}/starship-${arch}-unknown-linux-gnu.tar.gz"
-
-    local tmp_dir=$(mktemp -d)
-    trap "rm -rf $tmp_dir" EXIT
-
-    download_or_print "$url" "${tmp_dir}/starship.tar.gz"
-
-    if ! is_dry_run; then
-        tar -xzf "${tmp_dir}/starship.tar.gz" -C "$tmp_dir"
-        sudo install -m 755 "${tmp_dir}/starship" "$INSTALL_PATH"
+    if is_dry_run; then
+        echo "[DRY-RUN] Would run: curl -sS https://starship.rs/install.sh | sh -s -- -y"
+        return 0
     fi
 
-    update_lock "$PACKAGE_NAME" "$version"
-    log_success "starship v${version} installed"
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+
+    log_success "starship installed"
 }
 
 verify() {
@@ -92,12 +74,10 @@ main() {
 
     case "$action" in
         install|update)
-            local desired=$(get_desired_version)
-            if is_installed; then
-                local current=$(get_installed_version)
-                needs_update "$current" "$desired" && do_install "$desired" || log_success "starship v${current} up to date"
+            if is_installed && [[ "$action" == "install" ]]; then
+                log_success "starship already installed: v$(get_installed_version)"
             else
-                do_install "$desired"
+                do_install
             fi
             create_shell_config
             verify
@@ -106,8 +86,6 @@ main() {
         version) is_installed && get_installed_version || { echo "not installed"; return 1; } ;;
         *) echo "Usage: $0 [install|update|verify|version] [--dry-run]"; exit 1 ;;
     esac
-
-    is_dry_run && print_dry_run_summary
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"

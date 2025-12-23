@@ -141,7 +141,7 @@ main() {
         *) echo "Usage: $0 [install|update|verify|version] [--dry-run]"; exit 1 ;;
     esac
 
-    is_dry_run && print_dry_run_summary
+    is_dry_run && print_dry_run_summary || true
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"
