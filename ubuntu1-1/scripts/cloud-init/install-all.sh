@@ -171,6 +171,14 @@ generate_shell_config() {
 setup_tailscale() {
     log_section "Setting Up Tailscale"
 
+    # Skip tailscale setup during cloud-init - authentication is handled by local-remote-login
+    # Cloud-init already installs and starts tailscaled daemon
+    if [[ "${CLOUD_INIT:-false}" == "true" ]]; then
+        log_info "Skipping Tailscale setup during cloud-init"
+        log_info "Run 'local-remote-login' after first login to authenticate"
+        return 0
+    fi
+
     if [[ -f "${SHARED_DIR}/tailscale.sh" ]]; then
         local args=""
         # Pass through confirmation skip if set

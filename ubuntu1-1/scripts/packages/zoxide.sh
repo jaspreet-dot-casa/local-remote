@@ -23,6 +23,13 @@ source "${SCRIPT_DIR}/../lib/dryrun.sh"
 
 PACKAGE_NAME="zoxide"
 
+# zoxide official installer installs to ~/.local/bin
+# Ensure it's in PATH for detection
+[[ -d "${HOME}/.local/bin" ]] && export PATH="${HOME}/.local/bin:${PATH}"
+
+# Source shell config if it exists (for PATH setup)
+[[ -f "${HOME}/.zsh_custom_config" ]] && source "${HOME}/.zsh_custom_config"
+
 is_installed() { command_exists zoxide; }
 
 get_installed_version() {

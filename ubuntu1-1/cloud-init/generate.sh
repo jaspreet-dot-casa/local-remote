@@ -141,10 +141,12 @@ validate_yaml() {
         return 1
     fi
 
-    # Check for unsubstituted variables
-    if grep -q '\${[A-Z_]*}' "$file"; then
-        log_warning "Found unsubstituted variables in output:"
-        grep -o '\${[A-Z_]*}' "$file" | sort -u | while read -r var; do
+    # Check for unsubstituted template variables (only our known template vars)
+    # Don't flag bash variables like ${BLUE}, ${NC}, etc.
+    local template_vars='USERNAME|HOSTNAME|SSH_PUBLIC_KEY|USER_NAME|USER_EMAIL|REPO_URL|REPO_BRANCH|TAILSCALE_AUTH_KEY|GITHUB_PAT'
+    if grep -qE "\\\$\{($template_vars)\}" "$file"; then
+        log_warning "Found unsubstituted template variables in output:"
+        grep -oE "\\\$\{($template_vars)\}" "$file" | sort -u | while read -r var; do
             echo "  - $var"
         done
         return 1

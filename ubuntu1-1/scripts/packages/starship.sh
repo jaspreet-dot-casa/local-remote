@@ -23,6 +23,12 @@ source "${SCRIPT_DIR}/../lib/dryrun.sh"
 
 PACKAGE_NAME="starship"
 
+# Starship installs to ~/.local/bin - ensure it's in PATH for detection
+[[ -d "${HOME}/.local/bin" ]] && export PATH="${HOME}/.local/bin:${PATH}"
+
+# Source shell config if it exists (for PATH setup)
+[[ -f "${HOME}/.zsh_custom_config" ]] && source "${HOME}/.zsh_custom_config"
+
 is_installed() { command_exists starship; }
 
 get_installed_version() {
@@ -35,11 +41,13 @@ do_install() {
     log_info "Installing starship via official installer..."
 
     if is_dry_run; then
-        echo "[DRY-RUN] Would run: curl -sS https://starship.rs/install.sh | sh -s -- -y"
+        echo "[DRY-RUN] Would run: curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin"
         return 0
     fi
 
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    # Install to ~/.local/bin (user-local, no sudo needed)
+    mkdir -p "${HOME}/.local/bin"
+    curl -sS https://starship.rs/install.sh | sh -s -- -y -b "${HOME}/.local/bin"
 
     log_success "starship installed"
 }

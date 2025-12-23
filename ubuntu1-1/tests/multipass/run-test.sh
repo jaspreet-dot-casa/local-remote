@@ -127,16 +127,18 @@ launch_vm() {
 
     # Launch with cloud-init
     # Using Ubuntu 24.04 LTS (noble) for better compatibility
+    # Use --timeout to give cloud-init more time during launch (in seconds)
     if ! multipass launch \
         --name "$VM_NAME" \
         --cpus 2 \
         --memory 4G \
         --disk 20G \
+        --timeout 900 \
         --cloud-init "$GENERATED_YAML" \
         24.04; then
         log_error "Failed to launch VM"
-        cleanup
-        exit 1
+        # Don't cleanup here - let the trap handle it based on KEEP_VM flag
+        return 1
     fi
 
     log_success "VM launched successfully"
@@ -250,7 +252,13 @@ display_results() {
 }
 
 cleanup() {
-    if [[ "$KEEP_VM" == "true" ]]; then
+    # Check if VM exists first
+    local vm_exists=false
+    if [[ -n "$VM_NAME" ]] && multipass list 2>/dev/null | grep -q "$VM_NAME"; then
+        vm_exists=true
+    fi
+
+    if [[ "$KEEP_VM" == "true" ]] && [[ "$vm_exists" == "true" ]]; then
         log_warning "Keeping VM for debugging: $VM_NAME"
         echo ""
         echo "To inspect the VM:"
@@ -268,7 +276,7 @@ cleanup() {
         return 0
     fi
 
-    if [[ -n "$VM_NAME" ]]; then
+    if [[ "$vm_exists" == "true" ]]; then
         log_info "Cleaning up VM: $VM_NAME"
         multipass delete "$VM_NAME" 2>/dev/null || true
         multipass purge 2>/dev/null || true
