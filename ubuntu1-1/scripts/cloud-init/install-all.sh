@@ -36,6 +36,9 @@ SHARED_DIR="${SCRIPT_DIR}/../shared"
 LOG_DIR="${HOME}/.local-remote/logs"
 LOG_FILE=""
 
+# Ensure ~/.local/bin is in PATH (for user-installed binaries like starship, zoxide)
+[[ -d "${HOME}/.local/bin" ]] && export PATH="${HOME}/.local/bin:${PATH}"
+
 # Track errors
 declare -a ERRORS=()
 
